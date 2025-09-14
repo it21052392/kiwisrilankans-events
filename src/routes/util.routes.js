@@ -1,0 +1,24 @@
+import express from 'express';
+import {
+  getSystemInfo,
+  getHealthCheck,
+  getStats,
+} from '../controllers/util.controller.js';
+import { authenticate } from '../middlewares/auth.js';
+import { requireAdmin } from '../middlewares/rbac.js';
+
+const router = express.Router();
+
+// Public utility routes
+router.get('/health', getHealthCheck);
+router.get('/stats', getStats);
+
+// Protected utility routes
+router.use(authenticate);
+
+// Admin only utility routes
+router.use(requireAdmin);
+
+router.get('/system', getSystemInfo);
+
+export default router;
