@@ -22,14 +22,14 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: false,
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
     role: {
       type: String,
-      enum: ['user', 'moderator', 'admin'],
-      default: 'user',
+      enum: ['organizer', 'admin'],
+      required: [true, 'Role is required'],
     },
     avatar: {
       type: String,

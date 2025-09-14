@@ -1,25 +1,35 @@
 import express from 'express';
 import {
-  register,
-  login,
-  googleAuth,
+  googleAuthOrganizer,
+  googleAuthAdmin,
   googleCallback,
   refreshToken,
   logout,
   getMe,
 } from '../controllers/auth.controller.js';
 import { authenticate } from '../middlewares/auth.js';
-import { validateBody } from '../middlewares/validate.js';
-import { authSchemas } from '../validators/auth.schema.js';
 
 const router = express.Router();
 
-// Public routes
-router.post('/register', validateBody(authSchemas.register), register);
-router.post('/login', validateBody(authSchemas.login), login);
-router.get('/google', googleAuth);
+// Public routes - Google OAuth only
+router.get('/google/organizer', googleAuthOrganizer);
+router.get('/google/admin', googleAuthAdmin);
 router.get('/google/callback', googleCallback);
 router.post('/refresh', refreshToken);
+
+// Test endpoint to verify admin access
+router.get('/test-admin', authenticate, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Admin access verified',
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+    },
+  });
+});
 
 // Protected routes
 router.post('/logout', authenticate, logout);

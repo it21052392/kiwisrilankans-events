@@ -2,83 +2,60 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { authService } from '../services/auth.service.js';
 import { logger } from '../config/logger.js';
 
-// @desc    Register user
-// @route   POST /api/auth/register
+// @desc    Google OAuth for Organizer registration/login
+// @route   GET /api/auth/google/organizer
 // @access  Public
-const register = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-
-  const user = await authService.register({ name, email, password });
-
-  logger.info(`User registered: ${user.email}`);
-
-  res.status(201).json({
-    success: true,
-    message: 'User registered successfully',
-    data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    },
-  });
+const googleAuthOrganizer = asyncHandler(async (req, res) => {
+  try {
+    const authUrl = await authService.getGoogleAuthUrl('organizer');
+    logger.info(`Generated auth URL: ${authUrl}`);
+    res.redirect(authUrl);
+  } catch (error) {
+    logger.error('Error generating Google auth URL:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate Google auth URL',
+      error: error.message,
+    });
+  }
 });
 
-// @desc    Login user
-// @route   POST /api/auth/login
+// @desc    Google OAuth for Admin registration/login
+// @route   GET /api/auth/google/admin
 // @access  Public
-const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-
-  const { user, accessToken, refreshToken } = await authService.login(
-    email,
-    password
-  );
-
-  logger.info(`User logged in: ${user.email}`);
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-  });
-
-  res.json({
-    success: true,
-    message: 'Login successful',
-    data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      accessToken,
-    },
-  });
-});
-
-// @desc    Google OAuth
-// @route   GET /api/auth/google
-// @access  Public
-const googleAuth = asyncHandler(async (req, res) => {
-  const authUrl = await authService.getGoogleAuthUrl();
-  res.redirect(authUrl);
+const googleAuthAdmin = asyncHandler(async (req, res) => {
+  try {
+    const authUrl = await authService.getGoogleAuthUrl('admin');
+    logger.info(`Generated auth URL: ${authUrl}`);
+    res.redirect(authUrl);
+  } catch (error) {
+    logger.error('Error generating Google auth URL:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate Google auth URL',
+      error: error.message,
+    });
+  }
 });
 
 // @desc    Google OAuth callback
 // @route   GET /api/auth/google/callback
 // @access  Public
 const googleCallback = asyncHandler(async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
+
+  if (!code || !state) {
+    return res
+      .status(400)
+      .redirect(`${process.env.FRONTEND_URL}?error=missing_parameters`);
+  }
 
   const { user, accessToken, refreshToken } =
-    await authService.handleGoogleCallback(code);
+    await authService.handleGoogleCallback(code, state);
 
-  logger.info(`User logged in via Google: ${user.email}`);
+  logger.info(
+    `User logged in via Google: ${user.email} with role: ${user.role}`
+  );
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
@@ -87,8 +64,10 @@ const googleCallback = asyncHandler(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 
-  // Redirect to frontend with token
-  res.redirect(`${process.env.FRONTEND_URL}?token=${accessToken}`);
+  // Redirect to frontend with token and role
+  res.redirect(
+    `${process.env.FRONTEND_URL}?token=${accessToken}&role=${user.role}`
+  );
 });
 
 // @desc    Refresh token
@@ -161,9 +140,8 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 export {
-  register,
-  login,
-  googleAuth,
+  googleAuthOrganizer,
+  googleAuthAdmin,
   googleCallback,
   refreshToken,
   logout,
