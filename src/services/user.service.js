@@ -16,9 +16,7 @@ class UserService {
     }
 
     const users = await User.find(query)
-      .select(
-        '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
-      )
+      .select('-emailVerificationToken')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -98,9 +96,7 @@ class UserService {
 
   async getActiveUsers() {
     return await User.find({ isActive: true })
-      .select(
-        '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
-      )
+      .select('-emailVerificationToken')
       .sort({ name: 1 });
   }
 

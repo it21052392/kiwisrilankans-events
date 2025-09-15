@@ -172,9 +172,7 @@ class AdminService {
     }
 
     const users = await User.find(query)
-      .select(
-        '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
-      )
+      .select('-emailVerificationToken')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -194,9 +192,7 @@ class AdminService {
 
   async getUserDetails(id) {
     const user = await User.findById(id)
-      .select(
-        '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
-      )
+      .select('-emailVerificationToken')
       .populate('createdBy', 'name email');
 
     if (!user) {
