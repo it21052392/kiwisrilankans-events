@@ -9,6 +9,9 @@ import {
   getEventAnalytics,
   getSystemLogs,
   sendBulkNotification,
+  getPendingEvents,
+  approveEvent,
+  rejectEvent,
 } from '../controllers/admin.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin } from '../middlewares/rbac.js';
@@ -47,9 +50,25 @@ router.patch(
 // Event management
 router.get('/events', validateQuery(commonSchemas.pagination), getAllEvents);
 router.get(
+  '/events/pending',
+  validateQuery(commonSchemas.pagination),
+  getPendingEvents
+);
+router.get(
   '/events/:id/analytics',
   validateParams(commonSchemas.mongoId),
   getEventAnalytics
+);
+router.patch(
+  '/events/:id/approve',
+  validateParams(commonSchemas.mongoId),
+  approveEvent
+);
+router.patch(
+  '/events/:id/reject',
+  validateParams(commonSchemas.mongoId),
+  validateBody(adminSchemas.rejectEvent),
+  rejectEvent
 );
 
 // System management

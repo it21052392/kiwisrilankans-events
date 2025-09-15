@@ -171,6 +171,60 @@ const sendBulkNotification = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get pending events for approval
+// @route   GET /api/admin/events/pending
+// @access  Private/Admin
+const getPendingEvents = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const events = await adminService.getPendingEvents({
+    page: parseInt(page),
+    limit: parseInt(limit),
+  });
+
+  res.json({
+    success: true,
+    data: events,
+  });
+});
+
+// @desc    Approve event
+// @route   PATCH /api/admin/events/:id/approve
+// @access  Private/Admin
+const approveEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const adminId = req.user._id;
+
+  const event = await adminService.approveEvent(id, adminId);
+
+  logger.info(`Event approved: ${event.title} by admin ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event approved successfully',
+    data: { event },
+  });
+});
+
+// @desc    Reject event
+// @route   PATCH /api/admin/events/:id/reject
+// @access  Private/Admin
+const rejectEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+  const adminId = req.user._id;
+
+  const event = await adminService.rejectEvent(id, adminId, reason);
+
+  logger.info(`Event rejected: ${event.title} by admin ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event rejected successfully',
+    data: { event },
+  });
+});
+
 export {
   getDashboardStats,
   getAllUsers,
@@ -181,4 +235,7 @@ export {
   getEventAnalytics,
   getSystemLogs,
   sendBulkNotification,
+  getPendingEvents,
+  approveEvent,
+  rejectEvent,
 };

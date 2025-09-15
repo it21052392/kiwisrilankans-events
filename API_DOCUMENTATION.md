@@ -75,71 +75,135 @@ Authorization: Bearer <your-jwt-token>
 
 ## 🔐 **Authentication Endpoints**
 
-### 4. User Registration
+**Note**: This system uses Google OAuth for authentication. Users must have a Google account and be whitelisted by an admin to access the system.
 
-- **POST** `/api/auth/register`
-- **Description**: Register a new user
+### 4. Google OAuth for Organizers
+
+- **GET** `/api/auth/google/organizer`
+- **Description**: Initiate Google OAuth flow for organizer role
 - **Authentication**: None required
-- **Request Body**:
+- **Response**: Redirects to Google OAuth consent screen
 
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "SecurePass123"
-}
-```
+### 5. Google OAuth for Admins
 
-### 5. User Login
-
-- **POST** `/api/auth/login`
-- **Description**: Login user and get JWT token
+- **GET** `/api/auth/google/admin`
+- **Description**: Initiate Google OAuth flow for admin role
 - **Authentication**: None required
-- **Request Body**:
+- **Response**: Redirects to Google OAuth consent screen
 
-```json
-{
-  "email": "john@example.com",
-  "password": "SecurePass123"
-}
-```
-
-### 6. Google OAuth
-
-- **GET** `/api/auth/google`
-- **Description**: Initiate Google OAuth flow
-- **Authentication**: None required
-
-### 7. Google OAuth Callback
+### 6. Google OAuth Callback
 
 - **GET** `/api/auth/google/callback`
-- **Description**: Handle Google OAuth callback
+- **Description**: Handle Google OAuth callback and create/login user
 - **Authentication**: None required
+- **Query Parameters**:
+  - `code`: Authorization code from Google
+  - `state`: State parameter containing role information
+- **Response**: Redirects to frontend with JWT token and user role
 
-### 8. Refresh Token
+### 7. Refresh Token
 
 - **POST** `/api/auth/refresh`
-- **Description**: Refresh JWT token
-- **Authentication**: None required
-- **Request Body** (cookies):
+- **Description**: Refresh JWT access token using refresh token cookie
+- **Authentication**: None required (uses refresh token cookie)
+- **Response**:
 
 ```json
 {
-  "refreshToken": "your-refresh-token"
+  "success": true,
+  "data": {
+    "accessToken": "new-jwt-token",
+    "user": {
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "organizer"
+    }
+  }
 }
 ```
 
-### 9. Logout
+### 8. Logout
 
 - **POST** `/api/auth/logout`
-- **Description**: Logout user
+- **Description**: Logout user and clear refresh token
 - **Authentication**: Required
+- **Response**:
 
-### 10. Get Current User
+```json
+{
+  "success": true,
+  "message": "Logout successful"
+}
+```
+
+### 9. Get Current User
 
 - **GET** `/api/auth/me`
-- **Description**: Get current user profile
+- **Description**: Get current user profile information
 - **Authentication**: Required
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "organizer",
+      "avatar": "https://example.com/avatar.jpg",
+      "createdAt": "2024-01-15T10:00:00Z"
+    }
+  }
+}
+```
+
+### 10. Test Admin Access
+
+- **GET** `/api/auth/test-admin`
+- **Description**: Test endpoint to verify admin access
+- **Authentication**: Required (Admin only)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Admin access verified",
+  "user": {
+    "id": "64a1b2c3d4e5f6789abcdef0",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "admin"
+  }
+}
+```
+
+---
+
+## 👤 **User Role System & Access Control**
+
+This system uses a role-based access control (RBAC) with Google OAuth authentication:
+
+### **User Roles:**
+
+- **`organizer`**: Can create events (saved as draft), manage their own events
+- **`admin`**: Can approve/reject events, manage users, access admin panel
+
+### **Access Control:**
+
+- Users must be **whitelisted by an admin** before they can authenticate
+- Only whitelisted email addresses can access the system via Google OAuth
+- Role is determined during the OAuth flow based on the whitelist entry
+
+### **Authentication Flow:**
+
+1. Admin adds email to whitelist with specific role
+2. User visits Google OAuth endpoint for their role (`/google/organizer` or `/google/admin`)
+3. Google OAuth redirects to callback with user info
+4. System checks if email is whitelisted and creates/logs in user
+5. User receives JWT token and can access system based on their role
 
 ---
 
@@ -208,22 +272,6 @@ Authorization: Bearer <your-jwt-token>
 }
 ```
 
-### 16. Change Password
-
-- **PUT** `/api/users/change-password`
-- **Description**: Change user password
-- **Authentication**: Required
-- **Request Body**:
-
-```json
-{
-  "currentPassword": "OldPass123",
-  "newPassword": "NewPass123"
-}
-```
-
----
-
 ## 🎯 **Event Management Endpoints**
 
 ### 17. Get All Events
@@ -250,11 +298,11 @@ Authorization: Bearer <your-jwt-token>
 - **Path Parameters**:
   - `id`: Event ID (MongoDB ObjectId)
 
-### 19. Create Event (Admin)
+### 19. Create Event (Admin/Organizer)
 
 - **POST** `/api/events`
 - **Description**: Create new event
-- **Authentication**: Required (Admin only)
+- **Authentication**: Required (Admin or Organizer)
 - **Request Body**:
 
 ```json
@@ -818,23 +866,269 @@ Authorization: Bearer <your-jwt-token>
 }
 ```
 
+### 64. Get Pending Events (Admin)
+
+- **GET** `/api/admin/events/pending`
+- **Description**: Get events pending approval (draft status)
+- **Authentication**: Required (Admin only)
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 10)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "events": [
+      {
+        "_id": "64a1b2c3d4e5f6789abcdef0",
+        "title": "Event Title",
+        "description": "Event description",
+        "status": "draft",
+        "createdBy": {
+          "name": "Organizer Name",
+          "email": "organizer@example.com",
+          "role": "organizer"
+        },
+        "category": {
+          "name": "Category Name",
+          "color": "#FF6B6B"
+        },
+        "createdAt": "2024-01-15T10:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 5,
+      "pages": 1
+    }
+  }
+}
+```
+
+### 65. Approve Event (Admin)
+
+- **PATCH** `/api/admin/events/:id/approve`
+- **Description**: Approve an event (change status from draft to published)
+- **Authentication**: Required (Admin only)
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Event approved successfully",
+  "data": {
+    "event": {
+      "_id": "64a1b2c3d4e5f6789abcdef0",
+      "title": "Event Title",
+      "status": "published",
+      "approvedBy": "64a1b2c3d4e5f6789abcdef1",
+      "approvedAt": "2024-01-15T12:00:00Z"
+    }
+  }
+}
+```
+
+### 66. Reject Event (Admin)
+
+- **PATCH** `/api/admin/events/:id/reject`
+- **Description**: Reject an event (change status from draft to cancelled)
+- **Authentication**: Required (Admin only)
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Request Body**:
+
+```json
+{
+  "reason": "Event content doesn't meet our guidelines"
+}
+```
+
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Event rejected successfully",
+  "data": {
+    "event": {
+      "_id": "64a1b2c3d4e5f6789abcdef0",
+      "title": "Event Title",
+      "status": "cancelled",
+      "rejectedBy": "64a1b2c3d4e5f6789abcdef1",
+      "rejectedAt": "2024-01-15T12:00:00Z",
+      "rejectionReason": "Event content doesn't meet our guidelines"
+    }
+  }
+}
+```
+
+### 67. Add Email to Whitelist (Admin)
+
+- **POST** `/api/admin/whitelist`
+- **Description**: Add email to admin whitelist for system access
+- **Authentication**: Required (Admin only)
+- **Request Body**:
+
+```json
+{
+  "email": "newuser@example.com"
+}
+```
+
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Email added to admin whitelist successfully",
+  "data": {
+    "whitelistEntry": {
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "email": "newuser@example.com",
+      "addedAt": "2024-01-15T10:00:00Z",
+      "isActive": true
+    }
+  }
+}
+```
+
+### 68. Get Whitelisted Emails (Admin)
+
+- **GET** `/api/admin/whitelist`
+- **Description**: Get all whitelisted email addresses
+- **Authentication**: Required (Admin only)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "emails": [
+      {
+        "id": "64a1b2c3d4e5f6789abcdef0",
+        "email": "user@example.com",
+        "addedBy": {
+          "id": "64a1b2c3d4e5f6789abcdef1",
+          "name": "Admin User",
+          "email": "admin@example.com"
+        },
+        "addedAt": "2024-01-15T10:00:00Z",
+        "isActive": true
+      }
+    ]
+  }
+}
+```
+
+### 69. Remove Email from Whitelist (Admin)
+
+- **DELETE** `/api/admin/whitelist/:email`
+- **Description**: Remove email from admin whitelist
+- **Authentication**: Required (Admin only)
+- **Path Parameters**:
+  - `email`: Email address to remove from whitelist
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Email removed from admin whitelist successfully",
+  "data": {
+    "removedEmail": "user@example.com",
+    "removedAt": "2024-01-15T12:00:00Z"
+  }
+}
+```
+
+### 70. Check Email Whitelist Status (Admin)
+
+- **GET** `/api/admin/whitelist/check/:email`
+- **Description**: Check if an email is whitelisted
+- **Authentication**: Required (Admin only)
+- **Path Parameters**:
+  - `email`: Email address to check
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "email": "user@example.com",
+    "isWhitelisted": true
+  }
+}
+```
+
+### 71. Get Whitelist Statistics (Admin)
+
+- **GET** `/api/admin/whitelist/stats`
+- **Description**: Get whitelist statistics
+- **Authentication**: Required (Admin only)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "stats": {
+      "totalWhitelisted": 25,
+      "activeEmails": 23,
+      "inactiveEmails": 2,
+      "recentlyAdded": 5
+    }
+  }
+}
+```
+
+---
+
+## 🔄 **Event Approval Workflow**
+
+The event creation and approval system works as follows:
+
+1. **Organizers create events** → Events are saved with `status: "draft"` (not visible to public)
+2. **Admins view pending events** → Use `GET /api/admin/events/pending` to see draft events
+3. **Admins approve events** → Use `PATCH /api/admin/events/:id/approve` to publish events
+4. **OR Admins reject events** → Use `PATCH /api/admin/events/:id/reject` to cancel events
+5. **Approved events become visible** → Published events appear in public API (`GET /api/events`)
+
+### Event Status Flow:
+
+```
+draft → [admin approval] → published (visible to users)
+draft → [admin rejection] → cancelled (not visible to users)
+```
+
+### New Event Model Fields:
+
+- `approvedBy`: Admin who approved the event
+- `approvedAt`: When the event was approved
+- `rejectedBy`: Admin who rejected the event
+- `rejectedAt`: When the event was rejected
+- `rejectionReason`: Reason for rejection (max 500 characters)
+
 ---
 
 ## 🛠️ **Utility Endpoints**
 
-### 64. Get System Health
+### 72. Get System Health
 
 - **GET** `/api/utils/health`
 - **Description**: Get detailed system health
 - **Authentication**: None required
 
-### 65. Get System Stats
+### 73. Get System Stats
 
 - **GET** `/api/utils/stats`
 - **Description**: Get public system statistics
 - **Authentication**: None required
 
-### 66. Get System Info (Admin)
+### 74. Get System Info (Admin)
 
 - **GET** `/api/utils/system`
 - **Description**: Get detailed system information
@@ -895,9 +1189,13 @@ Error responses follow this format:
 
 1. **Start the server**: `pnpm run dev`
 2. **Test health**: `GET http://localhost:3000/health`
-3. **Register user**: `POST http://localhost:3000/api/auth/register`
-4. **Login**: `POST http://localhost:3000/api/auth/login`
-5. **Get events**: `GET http://localhost:3000/api/events`
+3. **Add user to whitelist (admin)**: `POST http://localhost:3000/api/admin/whitelist`
+4. **Google OAuth for organizer**: `GET http://localhost:3000/api/auth/google/organizer`
+5. **Google OAuth for admin**: `GET http://localhost:3000/api/auth/google/admin`
+6. **Get events**: `GET http://localhost:3000/api/events`
+7. **Create event (organizer)**: `POST http://localhost:3000/api/events`
+8. **View pending events (admin)**: `GET http://localhost:3000/api/admin/events/pending`
+9. **Approve event (admin)**: `PATCH http://localhost:3000/api/admin/events/:id/approve`
 
 ## 📋 **Testing Tools**
 

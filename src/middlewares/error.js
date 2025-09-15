@@ -54,12 +54,23 @@ export const errorHandler = (err, req, res, _next) => {
       field: error.path.join('.'),
       message: error.message,
       code: error.code,
+      received: error.input,
     }));
+
+    logger.warn('Zod validation error caught by global handler:', {
+      errors,
+      url: req.url,
+      method: req.method,
+    });
 
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
       errors,
+      details: {
+        totalErrors: errors.length,
+        fields: errors.map(e => e.field),
+      },
     });
   }
 

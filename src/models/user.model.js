@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -20,12 +19,6 @@ const userSchema = new mongoose.Schema(
         'Please enter a valid email',
       ],
     },
-    password: {
-      type: String,
-      required: false,
-      minlength: [8, 'Password must be at least 8 characters'],
-      select: false,
-    },
     role: {
       type: String,
       enum: ['organizer', 'admin'],
@@ -45,14 +38,6 @@ const userSchema = new mongoose.Schema(
     },
     emailVerificationToken: {
       type: String,
-      select: false,
-    },
-    passwordResetToken: {
-      type: String,
-      select: false,
-    },
-    passwordResetExpires: {
-      type: Date,
       select: false,
     },
     lastLogin: {
@@ -117,24 +102,6 @@ userSchema.index({ isActive: 1 });
 userSchema.virtual('isLocked').get(function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 });
-
-// Pre-save middleware to hash password
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Instance method to check password
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
 
 // Instance method to increment login attempts
 userSchema.methods.incLoginAttempts = function () {

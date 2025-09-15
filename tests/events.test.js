@@ -33,11 +33,11 @@ describe('Events', () => {
       isActive: true,
     });
 
-    const regularUser = await User.create({
-      name: 'Regular User',
-      email: 'user@example.com',
+    const organizerUser = await User.create({
+      name: 'Organizer User',
+      email: 'organizer@example.com',
       password: 'Password123!',
-      role: 'user',
+      role: 'organizer',
       isEmailVerified: true,
       isActive: true,
     });
@@ -59,13 +59,15 @@ describe('Events', () => {
       password: 'Password123!',
     });
 
-    const userLoginResponse = await request(app).post('/api/auth/login').send({
-      email: 'user@example.com',
-      password: 'Password123!',
-    });
+    const organizerLoginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'organizer@example.com',
+        password: 'Password123!',
+      });
 
     adminToken = adminLoginResponse.body.data.accessToken;
-    authToken = userLoginResponse.body.data.accessToken;
+    authToken = organizerLoginResponse.body.data.accessToken;
   });
 
   describe('GET /api/events', () => {
@@ -124,7 +126,36 @@ describe('Events', () => {
       expect(response.body.data.event.title).toBe(eventData.title);
     });
 
-    it('should return 403 for non-admin user', async () => {
+    it('should create event with organizer token', async () => {
+      const eventData = {
+        title: 'Test Event by Organizer',
+        description: 'Test event description by organizer',
+        category: categoryId,
+        startDate: '2024-12-31T10:00:00Z',
+        endDate: '2024-12-31T18:00:00Z',
+        registrationDeadline: '2024-12-28T23:59:59Z',
+        location: {
+          name: 'Test Venue',
+          address: '123 Test Street',
+          city: 'Auckland',
+        },
+        capacity: 100,
+        price: 25,
+        currency: 'NZD',
+      };
+
+      const response = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(eventData)
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Event created successfully');
+      expect(response.body.data.event.title).toBe(eventData.title);
+    });
+
+    it('should return 401 for unauthenticated request', async () => {
       const eventData = {
         title: 'Test Event',
         description: 'Test event description',
@@ -144,9 +175,8 @@ describe('Events', () => {
 
       const response = await request(app)
         .post('/api/events')
-        .set('Authorization', `Bearer ${authToken}`)
         .send(eventData)
-        .expect(403);
+        .expect(401);
 
       expect(response.body.success).toBe(false);
     });

@@ -127,4 +127,14 @@ export const adminSchemas = {
         .refine(val => val === true, 'Restore confirmation is required'),
     }),
   }),
+
+  rejectEvent: z.object({
+    body: z.object({
+      reason: z
+        .string()
+        .min(1, 'Rejection reason is required')
+        .max(500, 'Rejection reason cannot exceed 500 characters')
+        .trim(),
+    }),
+  }),
 };

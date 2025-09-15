@@ -87,28 +87,4 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Change password
-// @route   PUT /api/users/change-password
-// @access  Private
-const changePassword = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const { currentPassword, newPassword } = req.body;
-
-  await userService.changePassword(userId, currentPassword, newPassword);
-
-  logger.info(`Password changed: ${req.user.email}`);
-
-  res.json({
-    success: true,
-    message: 'Password changed successfully',
-  });
-});
-
-export {
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
-  updateProfile,
-  changePassword,
-};
+export { getUsers, getUserById, updateUser, deleteUser, updateProfile };

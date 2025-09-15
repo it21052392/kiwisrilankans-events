@@ -31,6 +31,9 @@ export const requireAdmin = requireRole('admin');
 // Admin or Moderator access
 export const requireAdminOrModerator = requireRole('admin', 'moderator');
 
+// Admin or Organizer access
+export const requireAdminOrOrganizer = requireRole('admin', 'organizer');
+
 // Owner or Admin access (for resource ownership)
 export const requireOwnerOrAdmin = (resourceUserIdField = 'userId') => {
   return (req, res, next) => {

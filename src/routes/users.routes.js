@@ -5,7 +5,6 @@ import {
   updateUser,
   deleteUser,
   updateProfile,
-  changePassword,
 } from '../controllers/users.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin } from '../middlewares/rbac.js';
@@ -51,10 +50,5 @@ router.delete(
 
 // User profile routes
 router.put('/profile', validateBody(userSchemas.updateProfile), updateProfile);
-router.put(
-  '/change-password',
-  validateBody(userSchemas.changePassword),
-  changePassword
-);
 
 export default router;

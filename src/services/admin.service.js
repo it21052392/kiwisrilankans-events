@@ -175,7 +175,6 @@ class AdminService {
       .select(
         '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
       )
-      .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -443,6 +442,89 @@ class AdminService {
     } catch (error) {
       logger.error('Bulk notification error:', error);
       throw new Error('Failed to send bulk notifications');
+    }
+  }
+
+  // Event approval methods
+  async approveEvent(eventId, adminId) {
+    try {
+      const event = await Event.findByIdAndUpdate(
+        eventId,
+        {
+          status: 'published',
+          updatedBy: adminId,
+          approvedAt: new Date(),
+          approvedBy: adminId,
+        },
+        { new: true }
+      ).populate('createdBy', 'name email');
+
+      if (!event) {
+        throw new Error('Event not found');
+      }
+
+      logger.info(`Event approved: ${event.title} by admin ${adminId}`);
+      return event;
+    } catch (error) {
+      logger.error('Event approval error:', error);
+      throw new Error('Failed to approve event');
+    }
+  }
+
+  async rejectEvent(eventId, adminId, reason = '') {
+    try {
+      const event = await Event.findByIdAndUpdate(
+        eventId,
+        {
+          status: 'cancelled',
+          updatedBy: adminId,
+          rejectedAt: new Date(),
+          rejectedBy: adminId,
+          rejectionReason: reason,
+        },
+        { new: true }
+      ).populate('createdBy', 'name email');
+
+      if (!event) {
+        throw new Error('Event not found');
+      }
+
+      logger.info(
+        `Event rejected: ${event.title} by admin ${adminId}. Reason: ${reason}`
+      );
+      return event;
+    } catch (error) {
+      logger.error('Event rejection error:', error);
+      throw new Error('Failed to reject event');
+    }
+  }
+
+  async getPendingEvents({ page = 1, limit = 10 }) {
+    try {
+      const query = { status: 'draft' };
+      const skip = (page - 1) * limit;
+
+      const events = await Event.find(query)
+        .populate('createdBy', 'name email role')
+        .populate('category', 'name color icon')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const total = await Event.countDocuments(query);
+
+      return {
+        events,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      logger.error('Get pending events error:', error);
+      throw new Error('Failed to get pending events');
     }
   }
 }

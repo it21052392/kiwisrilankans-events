@@ -37,11 +37,9 @@ class UserService {
   }
 
   async getUserById(id) {
-    const user = await User.findById(id)
-      .select(
-        '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
-      )
-      .populate('createdBy', 'name email');
+    const user = await User.findById(id).select(
+      '-password -emailVerificationToken -passwordResetToken -passwordResetExpires'
+    );
 
     if (!user) {
       throw new Error('User not found');
@@ -71,24 +69,6 @@ class UserService {
     if (!user) {
       throw new Error('User not found');
     }
-
-    return { success: true };
-  }
-
-  async changePassword(userId, currentPassword, newPassword) {
-    const user = await User.findById(userId).select('+password');
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-      throw new Error('Current password is incorrect');
-    }
-
-    user.password = newPassword;
-    await user.save();
 
     return { success: true };
   }

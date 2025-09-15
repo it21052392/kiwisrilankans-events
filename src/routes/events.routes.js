@@ -10,7 +10,7 @@ import {
   getEventRegistrations,
 } from '../controllers/events.controller.js';
 import { authenticate } from '../middlewares/auth.js';
-import { requireAdmin } from '../middlewares/rbac.js';
+import { requireAdmin, requireAdminOrOrganizer } from '../middlewares/rbac.js';
 import {
   validateBody,
   validateParams,
@@ -41,10 +41,16 @@ router.delete(
   cancelEventRegistration
 );
 
+// Admin or Organizer routes
+router.post(
+  '/',
+  requireAdminOrOrganizer,
+  validateBody(eventSchemas.create),
+  createEvent
+);
+
 // Admin only routes
 router.use(requireAdmin);
-
-router.post('/', validateBody(eventSchemas.create), createEvent);
 router.put(
   '/:id',
   validateParams(commonSchemas.mongoId),
