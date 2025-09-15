@@ -2,31 +2,23 @@ import { User } from '../models/user.model.js';
 import { Event } from '../models/event.model.js';
 import { Category } from '../models/category.model.js';
 import { PencilHold } from '../models/pencilHold.model.js';
-import { Subscription } from '../models/subscription.model.js';
 import { logger } from '../config/logger.js';
 
 class AdminService {
   async getDashboardStats() {
-    const [
-      userStats,
-      eventStats,
-      categoryStats,
-      pencilHoldStats,
-      subscriptionStats,
-    ] = await Promise.all([
-      this.getUserStats(),
-      this.getEventStats(),
-      this.getCategoryStats(),
-      this.getPencilHoldStats(),
-      this.getSubscriptionStats(),
-    ]);
+    const [userStats, eventStats, categoryStats, pencilHoldStats] =
+      await Promise.all([
+        this.getUserStats(),
+        this.getEventStats(),
+        this.getCategoryStats(),
+        this.getPencilHoldStats(),
+      ]);
 
     return {
       users: userStats,
       events: eventStats,
       categories: categoryStats,
       pencilHolds: pencilHoldStats,
-      subscriptions: subscriptionStats,
     };
   }
 
@@ -121,35 +113,6 @@ class AdminService {
       confirmed,
       cancelled,
       expired,
-    };
-  }
-
-  async getSubscriptionStats() {
-    const stats = await Subscription.aggregate([
-      {
-        $group: {
-          _id: { type: '$type', status: '$status' },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const total = stats.reduce((sum, stat) => sum + stat.count, 0);
-    const active = stats
-      .filter(stat => stat._id.status === 'active')
-      .reduce((sum, stat) => sum + stat.count, 0);
-    const paused = stats
-      .filter(stat => stat._id.status === 'paused')
-      .reduce((sum, stat) => sum + stat.count, 0);
-    const cancelled = stats
-      .filter(stat => stat._id.status === 'cancelled')
-      .reduce((sum, stat) => sum + stat.count, 0);
-
-    return {
-      total,
-      active,
-      paused,
-      cancelled,
     };
   }
 

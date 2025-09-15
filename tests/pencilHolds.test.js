@@ -35,11 +35,11 @@ describe('Pencil Holds', () => {
       isActive: true,
     });
 
-    const regularUser = await User.create({
-      name: 'Regular User',
-      email: 'user@example.com',
+    const organizerUser = await User.create({
+      name: 'Organizer User',
+      email: 'organizer@example.com',
       password: 'Password123!',
-      role: 'user',
+      role: 'organizer',
       isEmailVerified: true,
       isActive: true,
     });
@@ -81,13 +81,15 @@ describe('Pencil Holds', () => {
       password: 'Password123!',
     });
 
-    const userLoginResponse = await request(app).post('/api/auth/login').send({
-      email: 'user@example.com',
-      password: 'Password123!',
-    });
+    const organizerLoginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'organizer@example.com',
+        password: 'Password123!',
+      });
 
     adminToken = adminLoginResponse.body.data.accessToken;
-    authToken = userLoginResponse.body.data.accessToken;
+    authToken = organizerLoginResponse.body.data.accessToken;
   });
 
   describe('POST /api/pencil-holds', () => {
@@ -138,6 +140,41 @@ describe('Pencil Holds', () => {
 
       expect(response.body.success).toBe(false);
     });
+
+    it('should return 403 for regular user (not organizer)', async () => {
+      // Create a regular user
+      const regularUser = await User.create({
+        name: 'Regular User',
+        email: 'regular@example.com',
+        password: 'Password123!',
+        role: 'user',
+        isEmailVerified: true,
+        isActive: true,
+      });
+
+      const regularLoginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'regular@example.com',
+          password: 'Password123!',
+        });
+
+      const pencilHoldData = {
+        eventId: eventId,
+        notes: 'Test pencil hold notes',
+      };
+
+      const response = await request(app)
+        .post('/api/pencil-holds')
+        .set(
+          'Authorization',
+          `Bearer ${regularLoginResponse.body.data.accessToken}`
+        )
+        .send(pencilHoldData)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
   });
 
   describe('GET /api/pencil-holds', () => {
@@ -145,10 +182,10 @@ describe('Pencil Holds', () => {
       // Create test pencil hold
       await PencilHold.create({
         event: eventId,
-        user: (await User.findOne({ email: 'user@example.com' }))._id,
+        user: (await User.findOne({ email: 'organizer@example.com' }))._id,
         status: 'pending',
         notes: 'Test pencil hold',
-        createdBy: (await User.findOne({ email: 'user@example.com' }))._id,
+        createdBy: (await User.findOne({ email: 'organizer@example.com' }))._id,
       });
     });
 
@@ -182,10 +219,10 @@ describe('Pencil Holds', () => {
       // Create test pencil hold
       await PencilHold.create({
         event: eventId,
-        user: (await User.findOne({ email: 'user@example.com' }))._id,
+        user: (await User.findOne({ email: 'organizer@example.com' }))._id,
         status: 'pending',
         notes: 'Test pencil hold',
-        createdBy: (await User.findOne({ email: 'user@example.com' }))._id,
+        createdBy: (await User.findOne({ email: 'organizer@example.com' }))._id,
       });
     });
 
@@ -215,28 +252,66 @@ describe('Pencil Holds', () => {
     beforeEach(async () => {
       const pencilHold = await PencilHold.create({
         event: eventId,
-        user: (await User.findOne({ email: 'user@example.com' }))._id,
+        user: (await User.findOne({ email: 'organizer@example.com' }))._id,
         status: 'pending',
         notes: 'Test pencil hold',
-        createdBy: (await User.findOne({ email: 'user@example.com' }))._id,
+        createdBy: (await User.findOne({ email: 'organizer@example.com' }))._id,
       });
 
       pencilHoldId = pencilHold._id;
     });
 
-    it('should confirm pencil hold with admin token', async () => {
+    it('should confirm pencil hold with organizer token', async () => {
       const response = await request(app)
         .patch(`/api/pencil-holds/${pencilHoldId}/confirm`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe(
+        'Pencil hold confirmed successfully. Waiting for admin approval.'
+      );
+    });
+
+    it('should return 401 without token', async () => {
+      const response = await request(app)
+        .patch(`/api/pencil-holds/${pencilHoldId}/confirm`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('PATCH /api/pencil-holds/:id/approve', () => {
+    let pencilHoldId;
+
+    beforeEach(async () => {
+      const pencilHold = await PencilHold.create({
+        event: eventId,
+        user: (await User.findOne({ email: 'organizer@example.com' }))._id,
+        status: 'confirmed',
+        notes: 'Test pencil hold',
+        createdBy: (await User.findOne({ email: 'organizer@example.com' }))._id,
+      });
+
+      pencilHoldId = pencilHold._id;
+    });
+
+    it('should approve pencil hold with admin token', async () => {
+      const response = await request(app)
+        .patch(`/api/pencil-holds/${pencilHoldId}/approve`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Pencil hold confirmed successfully');
+      expect(response.body.message).toBe(
+        'Pencil hold approved successfully. Event is now published.'
+      );
     });
 
     it('should return 403 for non-admin user', async () => {
       const response = await request(app)
-        .patch(`/api/pencil-holds/${pencilHoldId}/confirm`)
+        .patch(`/api/pencil-holds/${pencilHoldId}/approve`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(403);
 
@@ -245,7 +320,7 @@ describe('Pencil Holds', () => {
 
     it('should return 401 without token', async () => {
       const response = await request(app)
-        .patch(`/api/pencil-holds/${pencilHoldId}/confirm`)
+        .patch(`/api/pencil-holds/${pencilHoldId}/approve`)
         .expect(401);
 
       expect(response.body.success).toBe(false);
@@ -258,10 +333,10 @@ describe('Pencil Holds', () => {
     beforeEach(async () => {
       const pencilHold = await PencilHold.create({
         event: eventId,
-        user: (await User.findOne({ email: 'user@example.com' }))._id,
+        user: (await User.findOne({ email: 'organizer@example.com' }))._id,
         status: 'pending',
         notes: 'Test pencil hold',
-        createdBy: (await User.findOne({ email: 'user@example.com' }))._id,
+        createdBy: (await User.findOne({ email: 'organizer@example.com' }))._id,
       });
 
       pencilHoldId = pencilHold._id;

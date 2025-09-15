@@ -6,7 +6,7 @@ import eventRoutes from './events.routes.js';
 import adminRoutes from './admin.routes.js';
 import adminWhitelistRoutes from './adminWhitelist.routes.js';
 import pencilHoldRoutes from './pencilHolds.routes.js';
-import subscriptionRoutes from './subscriptions.routes.js';
+import sharingRoutes from './sharing.routes.js';
 import uploadRoutes from './uploads.routes.js';
 import utilRoutes from './util.routes.js';
 
@@ -42,7 +42,7 @@ router.use('/events', eventRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin', adminWhitelistRoutes);
 router.use('/pencil-holds', pencilHoldRoutes);
-router.use('/subscriptions', subscriptionRoutes);
+router.use('/sharing', sharingRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/utils', utilRoutes);
 

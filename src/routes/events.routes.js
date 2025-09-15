@@ -4,10 +4,15 @@ import {
   getEventById,
   createEvent,
   updateEvent,
+  updateEventByOrganizer,
   deleteEvent,
-  registerForEvent,
-  cancelEventRegistration,
-  getEventRegistrations,
+  deleteEventByOrganizer,
+  getEventsForCalendar,
+  getEventsForGrid,
+  getEventBySlug,
+  softDeleteEvent,
+  restoreEvent,
+  unpublishEvent,
 } from '../controllers/events.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin, requireAdminOrOrganizer } from '../middlewares/rbac.js';
@@ -23,23 +28,13 @@ const router = express.Router();
 
 // Public routes
 router.get('/', validateQuery(eventSchemas.getEventsQuery), getEvents);
+router.get('/calendar', getEventsForCalendar);
+router.get('/grid', getEventsForGrid);
+router.get('/slug/:slug', getEventBySlug);
 router.get('/:id', validateParams(commonSchemas.mongoId), getEventById);
 
 // Protected routes
 router.use(authenticate);
-
-// User event registration
-router.post(
-  '/:id/register',
-  validateParams(commonSchemas.mongoId),
-  validateBody(eventSchemas.register),
-  registerForEvent
-);
-router.delete(
-  '/:id/register',
-  validateParams(commonSchemas.mongoId),
-  cancelEventRegistration
-);
 
 // Admin or Organizer routes
 router.post(
@@ -47,6 +42,41 @@ router.post(
   requireAdminOrOrganizer,
   validateBody(eventSchemas.create),
   createEvent
+);
+
+// Organizer routes (for their own events)
+router.put(
+  '/:id/organizer',
+  requireAdminOrOrganizer,
+  validateParams(commonSchemas.mongoId),
+  validateBody(eventSchemas.updateByOrganizer),
+  updateEventByOrganizer
+);
+router.delete(
+  '/:id/organizer',
+  requireAdminOrOrganizer,
+  validateParams(commonSchemas.mongoId),
+  deleteEventByOrganizer
+);
+
+// Admin routes
+router.delete(
+  '/:id/soft',
+  requireAdmin,
+  validateParams(commonSchemas.mongoId),
+  softDeleteEvent
+);
+router.patch(
+  '/:id/restore',
+  requireAdmin,
+  validateParams(commonSchemas.mongoId),
+  restoreEvent
+);
+router.patch(
+  '/:id/unpublish',
+  requireAdmin,
+  validateParams(commonSchemas.mongoId),
+  unpublishEvent
 );
 
 // Admin only routes
@@ -58,11 +88,5 @@ router.put(
   updateEvent
 );
 router.delete('/:id', validateParams(commonSchemas.mongoId), deleteEvent);
-router.get(
-  '/:id/registrations',
-  validateParams(commonSchemas.mongoId),
-  validateQuery(commonSchemas.pagination),
-  getEventRegistrations
-);
 
 export default router;

@@ -16,6 +16,8 @@ const getEvents = asyncHandler(async (req, res) => {
     endDate,
     sortBy = 'startDate',
     sortOrder = 'asc',
+    view = 'list',
+    hidePast = true,
   } = req.query;
 
   const events = await eventService.getEvents({
@@ -28,6 +30,8 @@ const getEvents = asyncHandler(async (req, res) => {
     endDate,
     sortBy,
     sortOrder,
+    view,
+    hidePast: hidePast === 'true',
   });
 
   res.json({
@@ -71,7 +75,7 @@ const createEvent = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Update event
+// @desc    Update event (Admin only)
 // @route   PUT /api/events/:id
 // @access  Private/Admin
 const updateEvent = asyncHandler(async (req, res) => {
@@ -80,7 +84,7 @@ const updateEvent = asyncHandler(async (req, res) => {
 
   const event = await eventService.updateEvent(id, updateData);
 
-  logger.info(`Event updated: ${event.title}`);
+  logger.info(`Event updated by admin: ${event.title}`);
 
   res.json({
     success: true,
@@ -89,7 +93,30 @@ const updateEvent = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Delete event
+// @desc    Update event by organizer
+// @route   PUT /api/events/:id/organizer
+// @access  Private/Organizer
+const updateEventByOrganizer = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const userId = req.user._id;
+
+  const event = await eventService.updateEventByOrganizer(
+    id,
+    updateData,
+    userId
+  );
+
+  logger.info(`Event updated by organizer: ${event.title} - ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event updated successfully',
+    data: { event },
+  });
+});
+
+// @desc    Delete event (Admin only)
 // @route   DELETE /api/events/:id
 // @access  Private/Admin
 const deleteEvent = asyncHandler(async (req, res) => {
@@ -97,7 +124,7 @@ const deleteEvent = asyncHandler(async (req, res) => {
 
   await eventService.deleteEvent(id);
 
-  logger.info(`Event deleted: ${id}`);
+  logger.info(`Event deleted by admin: ${id}`);
 
   res.json({
     success: true,
@@ -105,61 +132,131 @@ const deleteEvent = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Register for event
-// @route   POST /api/events/:id/register
-// @access  Private
-const registerForEvent = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user._id;
-  const { additionalInfo } = req.body;
-
-  const registration = await eventService.registerForEvent(
-    id,
-    userId,
-    additionalInfo
-  );
-
-  logger.info(`User registered for event: ${id} - ${req.user.email}`);
-
-  res.status(201).json({
-    success: true,
-    message: 'Successfully registered for event',
-    data: { registration },
-  });
-});
-
-// @desc    Cancel event registration
-// @route   DELETE /api/events/:id/register
-// @access  Private
-const cancelEventRegistration = asyncHandler(async (req, res) => {
+// @desc    Delete event by organizer
+// @route   DELETE /api/events/:id/organizer
+// @access  Private/Organizer
+const deleteEventByOrganizer = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const userId = req.user._id;
 
-  await eventService.cancelEventRegistration(id, userId);
+  await eventService.deleteEventByOrganizer(id, userId);
 
-  logger.info(`Event registration cancelled: ${id} - ${req.user.email}`);
+  logger.info(`Event deleted by organizer: ${id} - ${req.user.email}`);
 
   res.json({
     success: true,
-    message: 'Event registration cancelled successfully',
+    message: 'Event deleted successfully',
   });
 });
 
-// @desc    Get event registrations
-// @route   GET /api/events/:id/registrations
-// @access  Private/Admin
-const getEventRegistrations = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+// @desc    Get events for calendar view
+// @route   GET /api/events/calendar
+// @access  Public
+const getEventsForCalendar = asyncHandler(async (req, res) => {
+  const { startDate, endDate, category, search } = req.query;
 
-  const registrations = await eventService.getEventRegistrations(id, {
+  const events = await eventService.getEventsForCalendar({
+    startDate,
+    endDate,
+    category,
+    search,
+  });
+
+  res.json({
+    success: true,
+    data: events,
+  });
+});
+
+// @desc    Get events for grid view
+// @route   GET /api/events/grid
+// @access  Public
+const getEventsForGrid = asyncHandler(async (req, res) => {
+  const {
+    page = 1,
+    limit = 12,
+    category,
+    search,
+    sortBy = 'startDate',
+    sortOrder = 'asc',
+  } = req.query;
+
+  const events = await eventService.getEventsForGrid({
     page: parseInt(page),
     limit: parseInt(limit),
+    category,
+    search,
+    sortBy,
+    sortOrder,
   });
 
   res.json({
     success: true,
-    data: registrations,
+    data: events,
+  });
+});
+
+// @desc    Get event by slug (public)
+// @route   GET /api/events/slug/:slug
+// @access  Public
+const getEventBySlug = asyncHandler(async (req, res) => {
+  const { slug } = req.params;
+
+  const event = await eventService.getEventBySlug(slug);
+
+  res.json({
+    success: true,
+    data: { event },
+  });
+});
+
+// @desc    Soft delete event
+// @route   DELETE /api/events/:id/soft
+// @access  Admin
+const softDeleteEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  await eventService.softDeleteEvent(id, userId);
+
+  logger.info(`Event soft deleted: ${id} - ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event deleted successfully',
+  });
+});
+
+// @desc    Restore event
+// @route   PATCH /api/events/:id/restore
+// @access  Admin
+const restoreEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await eventService.restoreEvent(id);
+
+  logger.info(`Event restored: ${id} - ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event restored successfully',
+  });
+});
+
+// @desc    Unpublish event
+// @route   PATCH /api/events/:id/unpublish
+// @access  Admin
+const unpublishEvent = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const adminId = req.user.id;
+
+  await eventService.unpublishEvent(id, adminId);
+
+  logger.info(`Event unpublished: ${id} - ${req.user.email}`);
+
+  res.json({
+    success: true,
+    message: 'Event unpublished successfully',
   });
 });
 
@@ -168,8 +265,13 @@ export {
   getEventById,
   createEvent,
   updateEvent,
+  updateEventByOrganizer,
   deleteEvent,
-  registerForEvent,
-  cancelEventRegistration,
-  getEventRegistrations,
+  deleteEventByOrganizer,
+  getEventsForCalendar,
+  getEventsForGrid,
+  getEventBySlug,
+  softDeleteEvent,
+  restoreEvent,
+  unpublishEvent,
 };

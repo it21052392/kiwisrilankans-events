@@ -14,7 +14,7 @@ const pencilHoldSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'expired'],
+      enum: ['pending', 'confirmed', 'converted', 'cancelled', 'expired'],
       default: 'pending',
     },
     notes: {
@@ -30,8 +30,8 @@ const pencilHoldSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Expiration date is required'],
       default: function () {
-        // Default to 7 days from now
-        return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Default to 48 hours from now
+        return new Date(Date.now() + 48 * 60 * 60 * 1000);
       },
     },
     confirmedAt: {
@@ -204,6 +204,12 @@ pencilHoldSchema.methods.cancel = function (reason) {
 // Instance method to extend expiration
 pencilHoldSchema.methods.extendExpiration = function (days = 7) {
   this.expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  return this.save();
+};
+
+// Instance method to convert pencil hold to event
+pencilHoldSchema.methods.convert = function () {
+  this.status = 'converted';
   return this.save();
 };
 

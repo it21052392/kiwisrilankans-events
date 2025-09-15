@@ -68,6 +68,9 @@ class PencilHoldService {
       throw new Error('Event is at full capacity');
     }
 
+    // Check for time/location conflicts with other penciled events
+    await this.checkTimeLocationConflicts(event);
+
     // Check if user already has a pencil hold for this event
     const existingHold = await PencilHold.findOne({
       event: eventId,
@@ -78,15 +81,6 @@ class PencilHoldService {
       throw new Error('User already has a pencil hold for this event');
     }
 
-    // Check if user is already registered
-    const isRegistered = event.registrations.some(
-      reg => reg.user.toString() === userId.toString()
-    );
-
-    if (isRegistered) {
-      throw new Error('User is already registered for this event');
-    }
-
     const pencilHold = await PencilHold.create({
       event: eventId,
       user: userId,
@@ -94,6 +88,35 @@ class PencilHoldService {
     });
 
     return await this.getPencilHoldById(pencilHold._id);
+  }
+
+  async checkTimeLocationConflicts(event) {
+    // Check for conflicts with other penciled events at the same time/location
+    const conflictingHolds = await PencilHold.find({
+      status: { $in: ['pending', 'confirmed'] },
+      expiresAt: { $gt: new Date() },
+      event: { $ne: event._id },
+    }).populate('event', 'startDate endDate location');
+
+    for (const hold of conflictingHolds) {
+      const holdEvent = hold.event;
+
+      // Check if events overlap in time
+      const timeOverlap =
+        event.startDate < holdEvent.endDate &&
+        event.endDate > holdEvent.startDate;
+
+      // Check if events are at the same location
+      const sameLocation =
+        event.location.name === holdEvent.location.name &&
+        event.location.address === holdEvent.location.address;
+
+      if (timeOverlap && sameLocation) {
+        throw new Error(
+          `Time slot conflict: Another penciled event exists at the same time and location`
+        );
+      }
+    }
   }
 
   async updatePencilHold(id, updateData, userId) {
@@ -191,6 +214,36 @@ class PencilHoldService {
     return await this.getPencilHoldById(id);
   }
 
+  async confirmPencilHoldByOrganizer(id, userId) {
+    const pencilHold = await PencilHold.findById(id);
+
+    if (!pencilHold) {
+      throw new Error('Pencil hold not found');
+    }
+
+    // Check if user owns the pencil hold
+    if (pencilHold.user.toString() !== userId.toString()) {
+      throw new Error('Not authorized to confirm this pencil hold');
+    }
+
+    if (pencilHold.status !== 'pending') {
+      throw new Error('Only pending pencil holds can be confirmed');
+    }
+
+    if (pencilHold.isExpired) {
+      throw new Error('Cannot confirm expired pencil hold');
+    }
+
+    // Check if event still has capacity
+    const event = await Event.findById(pencilHold.event);
+    if (event.registrationCount >= event.capacity) {
+      throw new Error('Event is at full capacity');
+    }
+
+    await pencilHold.confirm();
+    return await this.getPencilHoldById(id);
+  }
+
   async cancelPencilHold(id, reason) {
     const pencilHold = await PencilHold.findById(id);
 
@@ -230,6 +283,38 @@ class PencilHoldService {
     }
 
     await pencilHold.extendExpiration(days);
+    return await this.getPencilHoldById(id);
+  }
+
+  async approvePencilHold(id) {
+    const pencilHold = await PencilHold.findById(id);
+
+    if (!pencilHold) {
+      throw new Error('Pencil hold not found');
+    }
+
+    if (pencilHold.status !== 'confirmed') {
+      throw new Error('Only confirmed pencil holds can be approved');
+    }
+
+    // Get the event and update its status to published
+    const event = await Event.findById(pencilHold.event);
+    if (!event) {
+      throw new Error('Associated event not found');
+    }
+
+    // Update event status to published
+    event.status = 'published';
+    event.approvedBy = pencilHold.user; // The organizer who created it
+    event.approvedAt = new Date();
+    await event.save();
+
+    // Mark pencil hold as converted
+    pencilHold.status = 'converted';
+    pencilHold.approvedBy = pencilHold.user;
+    pencilHold.approvedAt = new Date();
+    await pencilHold.save();
+
     return await this.getPencilHoldById(id);
   }
 

@@ -42,9 +42,10 @@ const eventSchema = new mongoose.Schema(
     },
     registrationDeadline: {
       type: Date,
-      required: [true, 'Registration deadline is required'],
+      required: false,
       validate: {
         validator: function (value) {
+          if (!value) return true; // Optional field
           return value <= this.startDate;
         },
         message: 'Registration deadline must be before or on start date',
@@ -116,7 +117,16 @@ const eventSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ['draft', 'published', 'cancelled', 'completed'],
+      enum: [
+        'draft',
+        'pending_approval',
+        'published',
+        'rejected',
+        'unpublished',
+        'cancelled',
+        'completed',
+        'deleted',
+      ],
       default: 'draft',
     },
     featured: {
@@ -192,6 +202,25 @@ const eventSchema = new mongoose.Schema(
       type: String,
       maxlength: [500, 'Rejection reason cannot exceed 500 characters'],
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    unpublishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    unpublishedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -210,6 +239,8 @@ eventSchema.index({ featured: 1 });
 eventSchema.index({ 'location.city': 1 });
 eventSchema.index({ tags: 1 });
 eventSchema.index({ createdBy: 1 });
+eventSchema.index({ isDeleted: 1 });
+eventSchema.index({ deletedAt: 1 });
 
 // Compound indexes
 eventSchema.index({ status: 1, startDate: 1 });
@@ -226,7 +257,7 @@ eventSchema.virtual('isRegistrationOpen').get(function () {
   const now = new Date();
   return (
     this.status === 'published' &&
-    this.registrationDeadline > now &&
+    (!this.registrationDeadline || this.registrationDeadline > now) &&
     this.availableSpots > 0
   );
 });
@@ -257,7 +288,7 @@ eventSchema.pre('save', function (next) {
   if (this.startDate >= this.endDate) {
     return next(new Error('End date must be after start date'));
   }
-  if (this.registrationDeadline > this.startDate) {
+  if (this.registrationDeadline && this.registrationDeadline > this.startDate) {
     return next(
       new Error('Registration deadline must be before or on start date')
     );
@@ -267,37 +298,71 @@ eventSchema.pre('save', function (next) {
 
 // Static method to find published events
 eventSchema.statics.findPublished = function () {
-  return this.find({ status: 'published' });
+  return this.find({ status: 'published', isDeleted: false });
 };
 
 // Static method to find upcoming events
 eventSchema.statics.findUpcoming = function () {
   return this.find({
     status: 'published',
+    isDeleted: false,
     startDate: { $gt: new Date() },
   });
 };
 
 // Static method to find by slug
 eventSchema.statics.findBySlug = function (slug) {
-  return this.findOne({ slug, status: 'published' });
+  return this.findOne({ slug, status: 'published', isDeleted: false });
 };
 
 // Static method to find events by category
 eventSchema.statics.findByCategory = function (categoryId) {
-  return this.find({ category: categoryId, status: 'published' });
+  return this.find({
+    category: categoryId,
+    status: 'published',
+    isDeleted: false,
+  });
 };
 
 // Static method to search events
 eventSchema.statics.search = function (query) {
   return this.find({
     status: 'published',
+    isDeleted: false,
     $or: [
       { title: { $regex: query, $options: 'i' } },
       { description: { $regex: query, $options: 'i' } },
       { tags: { $in: [new RegExp(query, 'i')] } },
     ],
   });
+};
+
+// Instance method to soft delete event
+eventSchema.methods.softDelete = function (deletedBy) {
+  this.isDeleted = true;
+  this.deletedAt = new Date();
+  this.deletedBy = deletedBy;
+  this.status = 'deleted';
+  return this.save();
+};
+
+// Instance method to restore event
+eventSchema.methods.restore = function () {
+  this.isDeleted = false;
+  this.deletedAt = null;
+  this.deletedBy = null;
+  this.status = 'draft';
+  return this.save();
+};
+
+// Static method to find all events including deleted (for admin)
+eventSchema.statics.findAllIncludingDeleted = function (query = {}) {
+  return this.find(query);
+};
+
+// Static method to find only deleted events
+eventSchema.statics.findDeleted = function () {
+  return this.find({ isDeleted: true });
 };
 
 export const Event = mongoose.model('Event', eventSchema);

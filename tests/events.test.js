@@ -255,13 +255,18 @@ describe('Events', () => {
     });
   });
 
-  describe('POST /api/events/:id/register', () => {
+  describe('PUT /api/events/:id/organizer', () => {
     let eventId;
+    let organizerEventId;
 
     beforeEach(async () => {
-      const event = await Event.create({
-        title: 'Test Event',
-        description: 'Test event description',
+      const adminUser = await User.findOne({ role: 'admin' });
+      const organizerUser = await User.findOne({ role: 'organizer' });
+
+      // Create event by admin
+      const adminEvent = await Event.create({
+        title: 'Admin Event',
+        description: 'Event created by admin',
         category: categoryId,
         startDate: new Date('2024-12-31T10:00:00Z'),
         endDate: new Date('2024-12-31T18:00:00Z'),
@@ -275,28 +280,195 @@ describe('Events', () => {
         price: 25,
         currency: 'NZD',
         status: 'published',
-        createdBy: (await User.findOne({ role: 'admin' }))._id,
+        createdBy: adminUser._id,
       });
 
-      eventId = event._id;
+      // Create event by organizer
+      const organizerEvent = await Event.create({
+        title: 'Organizer Event',
+        description: 'Event created by organizer',
+        category: categoryId,
+        startDate: new Date('2024-12-31T10:00:00Z'),
+        endDate: new Date('2024-12-31T18:00:00Z'),
+        registrationDeadline: new Date('2024-12-28T23:59:59Z'),
+        location: {
+          name: 'Test Venue',
+          address: '123 Test Street',
+          city: 'Auckland',
+        },
+        capacity: 100,
+        price: 25,
+        currency: 'NZD',
+        status: 'published',
+        createdBy: organizerUser._id,
+      });
+
+      eventId = adminEvent._id;
+      organizerEventId = organizerEvent._id;
     });
 
-    it('should register user for event', async () => {
+    it('should update event by organizer who created it', async () => {
+      const updateData = {
+        title: 'Updated Organizer Event',
+        description: 'Updated description by organizer',
+        price: 30,
+      };
+
       const response = await request(app)
-        .post(`/api/events/${eventId}/register`)
+        .put(`/api/events/${organizerEventId}/organizer`)
         .set('Authorization', `Bearer ${authToken}`)
-        .send({})
-        .expect(201);
+        .send(updateData)
+        .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Successfully registered for event');
+      expect(response.body.message).toBe('Event updated successfully');
+      expect(response.body.data.event.title).toBe(updateData.title);
+      expect(response.body.data.event.price).toBe(updateData.price);
+    });
+
+    it('should not allow organizer to update event created by admin', async () => {
+      const updateData = {
+        title: 'Trying to update admin event',
+        price: 30,
+      };
+
+      const response = await request(app)
+        .put(`/api/events/${eventId}/organizer`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe(
+        'Access denied. You can only update events you created'
+      );
+    });
+
+    it('should return 401 without token', async () => {
+      const updateData = {
+        title: 'Updated Event',
+      };
+
+      const response = await request(app)
+        .put(`/api/events/${organizerEventId}/organizer`)
+        .send(updateData)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 400 for invalid data', async () => {
+      const updateData = {
+        title: '', // Invalid: empty title
+        price: -10, // Invalid: negative price
+      };
+
+      const response = await request(app)
+        .put(`/api/events/${organizerEventId}/organizer`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('DELETE /api/events/:id/organizer', () => {
+    let eventId;
+    let organizerEventId;
+
+    beforeEach(async () => {
+      const adminUser = await User.findOne({ role: 'admin' });
+      const organizerUser = await User.findOne({ role: 'organizer' });
+
+      // Create event by admin
+      const adminEvent = await Event.create({
+        title: 'Admin Event',
+        description: 'Event created by admin',
+        category: categoryId,
+        startDate: new Date('2024-12-31T10:00:00Z'),
+        endDate: new Date('2024-12-31T18:00:00Z'),
+        registrationDeadline: new Date('2024-12-28T23:59:59Z'),
+        location: {
+          name: 'Test Venue',
+          address: '123 Test Street',
+          city: 'Auckland',
+        },
+        capacity: 100,
+        price: 25,
+        currency: 'NZD',
+        status: 'published',
+        createdBy: adminUser._id,
+      });
+
+      // Create event by organizer
+      const organizerEvent = await Event.create({
+        title: 'Organizer Event',
+        description: 'Event created by organizer',
+        category: categoryId,
+        startDate: new Date('2024-12-31T10:00:00Z'),
+        endDate: new Date('2024-12-31T18:00:00Z'),
+        registrationDeadline: new Date('2024-12-28T23:59:59Z'),
+        location: {
+          name: 'Test Venue',
+          address: '123 Test Street',
+          city: 'Auckland',
+        },
+        capacity: 100,
+        price: 25,
+        currency: 'NZD',
+        status: 'published',
+        createdBy: organizerUser._id,
+      });
+
+      eventId = adminEvent._id;
+      organizerEventId = organizerEvent._id;
+    });
+
+    it('should delete event by organizer who created it', async () => {
+      const response = await request(app)
+        .delete(`/api/events/${organizerEventId}/organizer`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Event deleted successfully');
+
+      // Verify event is deleted
+      const deletedEvent = await Event.findById(organizerEventId);
+      expect(deletedEvent).toBeNull();
+    });
+
+    it('should not allow organizer to delete event created by admin', async () => {
+      const response = await request(app)
+        .delete(`/api/events/${eventId}/organizer`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe(
+        'Access denied. You can only delete events you created'
+      );
+
+      // Verify event still exists
+      const event = await Event.findById(eventId);
+      expect(event).not.toBeNull();
     });
 
     it('should return 401 without token', async () => {
       const response = await request(app)
-        .post(`/api/events/${eventId}/register`)
-        .send({})
+        .delete(`/api/events/${organizerEventId}/organizer`)
         .expect(401);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 404 for non-existent event', async () => {
+      const fakeId = '507f1f77bcf86cd799439011';
+      const response = await request(app)
+        .delete(`/api/events/${fakeId}/organizer`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
 
       expect(response.body.success).toBe(false);
     });

@@ -1,5 +1,37 @@
 # Kiwi Sri Lankans Events API Documentation
 
+## 🆕 **Latest Updates & New Features**
+
+### **✅ State Machine & Status Management:**
+
+- **Complete Event Status Flow**: Draft → Pending Approval → Published → Unpublished/Rejected/Cancelled/Deleted
+- **Pencil Hold Status Flow**: Pending → Confirmed → Converted (with 48-hour auto-expiry)
+- **Soft Delete System**: Events can be soft deleted and restored
+- **Unpublish Functionality**: Published events can be unpublished by admins
+
+### **✅ Public Features & Views:**
+
+- **Multiple View Types**: List, Grid, and Calendar views for events
+- **Auto-hide Past Events**: Past events automatically hidden from public views
+- **Event Sharing System**: Complete social media sharing (Facebook, Twitter, LinkedIn, WhatsApp, Telegram, Email)
+- **Slug-based URLs**: SEO-friendly event URLs for sharing
+- **Event Detail Pages**: Dedicated endpoints for public event viewing
+
+### **✅ Enhanced Event Management:**
+
+- **Organizer Self-Service**: Organizers can update/delete their own events
+- **Admin Controls**: Full admin control over event lifecycle
+- **Pencil Hold System**: 48-hour temporary event slot booking for organizers
+- **Conflict Prevention**: Time/location conflict checking for pencil holds
+
+### **✅ Removed Features:**
+
+- **Event Registration**: Removed all registration functionality as requested
+- **Reminder System**: Removed all notification/reminder features
+- **Subscription Management**: Removed subscription endpoints and services
+
+---
+
 ## Base URL
 
 ```
@@ -277,18 +309,20 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 ### 17. Get All Events
 
 - **GET** `/api/events`
-- **Description**: Get paginated list of events
+- **Description**: Get paginated list of events with multiple view options
 - **Authentication**: None required
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 10)
   - `search` (optional): Search term
   - `category` (optional): Category ID
-  - `status` (optional): Event status (draft, published, cancelled, completed)
+  - `status` (optional): Event status (draft, pending_approval, published, rejected, unpublished, cancelled, completed, deleted)
   - `startDate` (optional): Filter by start date
   - `endDate` (optional): Filter by end date
   - `sortBy` (optional): Sort field (startDate, endDate, title, createdAt, price, capacity)
   - `sortOrder` (optional): Sort order (asc, desc)
+  - `view` (optional): View type (list, grid, calendar) - default: list
+  - `hidePast` (optional): Hide past events (true/false) - default: true
 
 ### 18. Get Event by ID
 
@@ -297,6 +331,53 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 - **Authentication**: None required
 - **Path Parameters**:
   - `id`: Event ID (MongoDB ObjectId)
+
+### 18.1. Get Event by Slug
+
+- **GET** `/api/events/slug/:slug`
+- **Description**: Get event details by slug (for public sharing)
+- **Authentication**: None required
+- **Path Parameters**:
+  - `slug`: Event slug (URL-friendly identifier)
+
+### 18.2. Get Events for Calendar View
+
+- **GET** `/api/events/calendar`
+- **Description**: Get events formatted for calendar display with date grouping
+- **Authentication**: None required
+- **Query Parameters**:
+  - `startDate` (optional): Start date for calendar range
+  - `endDate` (optional): End date for calendar range
+  - `category` (optional): Filter by category ID
+  - `search` (optional): Search term
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "events": [...],
+    "eventsByDate": {
+      "2024-02-15": [...],
+      "2024-02-16": [...]
+    },
+    "total": 25
+  }
+}
+```
+
+### 18.3. Get Events for Grid View
+
+- **GET** `/api/events/grid`
+- **Description**: Get events optimized for grid/card display
+- **Authentication**: None required
+- **Query Parameters**:
+  - `page` (optional): Page number (default: 1)
+  - `limit` (optional): Items per page (default: 12)
+  - `category` (optional): Filter by category ID
+  - `search` (optional): Search term
+  - `sortBy` (optional): Sort field (startDate, endDate, title, createdAt, price, capacity)
+  - `sortOrder` (optional): Sort order (asc, desc)
 
 ### 19. Create Event (Admin/Organizer)
 
@@ -354,47 +435,77 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 ### 21. Delete Event (Admin)
 
 - **DELETE** `/api/events/:id`
-- **Description**: Delete event
+- **Description**: Delete event permanently
 - **Authentication**: Required (Admin only)
 - **Path Parameters**:
   - `id`: Event ID (MongoDB ObjectId)
 
-### 22. Register for Event
+### 21.1. Soft Delete Event (Admin)
 
-- **POST** `/api/events/:id/register`
-- **Description**: Register for an event
-- **Authentication**: Required
+- **DELETE** `/api/events/:id/soft`
+- **Description**: Soft delete event (can be restored)
+- **Authentication**: Required (Admin only)
 - **Path Parameters**:
   - `id`: Event ID (MongoDB ObjectId)
-- **Request Body**:
+- **Response**:
 
 ```json
 {
-  "additionalInfo": {
-    "dietaryRequirements": "Vegetarian",
-    "emergencyContact": "+64 21 987 6543"
-  }
+  "success": true,
+  "message": "Event deleted successfully"
 }
 ```
 
-### 23. Cancel Event Registration
+### 21.2. Restore Event (Admin)
 
-- **DELETE** `/api/events/:id/register`
-- **Description**: Cancel event registration
-- **Authentication**: Required
-- **Path Parameters**:
-  - `id`: Event ID (MongoDB ObjectId)
-
-### 24. Get Event Registrations (Admin)
-
-- **GET** `/api/events/:id/registrations`
-- **Description**: Get event registrations
+- **PATCH** `/api/events/:id/restore`
+- **Description**: Restore soft deleted event
 - **Authentication**: Required (Admin only)
 - **Path Parameters**:
   - `id`: Event ID (MongoDB ObjectId)
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 10)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Event restored successfully"
+}
+```
+
+### 21.3. Unpublish Event (Admin)
+
+- **PATCH** `/api/events/:id/unpublish`
+- **Description**: Unpublish a published event
+- **Authentication**: Required (Admin only)
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Event unpublished successfully"
+}
+```
+
+### 22. Update Event by Organizer
+
+- **PUT** `/api/events/:id/organizer`
+- **Description**: Update event by organizer (only their own events)
+- **Authentication**: Required (Admin or Organizer)
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Request Body**: Same as create event (restricted fields)
+- **Note**: Organizers can only update their own events and cannot change status, featured, or approval-related fields
+
+### 23. Delete Event by Organizer
+
+- **DELETE** `/api/events/:id/organizer`
+- **Description**: Delete event by organizer (only their own events)
+- **Authentication**: Required (Admin or Organizer)
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Note**: Organizers can only delete their own events
 
 ---
 
@@ -480,19 +591,19 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 - **GET** `/api/pencil-holds`
 - **Description**: Get paginated list of pencil holds
-- **Authentication**: None required
+- **Authentication**: Required (Admin only)
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 10)
   - `search` (optional): Search term
-  - `status` (optional): Hold status (pending, confirmed, cancelled, expired)
+  - `status` (optional): Hold status (pending, confirmed, converted, cancelled, expired)
   - `eventId` (optional): Filter by event ID
 
 ### 32. Get Pencil Hold by ID
 
 - **GET** `/api/pencil-holds/:id`
 - **Description**: Get specific pencil hold details
-- **Authentication**: None required
+- **Authentication**: Required (Admin only)
 - **Path Parameters**:
   - `id`: Pencil Hold ID (MongoDB ObjectId)
 
@@ -500,7 +611,7 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 - **POST** `/api/pencil-holds`
 - **Description**: Create new pencil hold
-- **Authentication**: Required
+- **Authentication**: Required (Admin or Organizer)
 - **Request Body**:
 
 ```json
@@ -520,7 +631,7 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 - **PUT** `/api/pencil-holds/:id`
 - **Description**: Update pencil hold details
-- **Authentication**: Required
+- **Authentication**: Required (Admin or Organizer)
 - **Path Parameters**:
   - `id`: Pencil Hold ID (MongoDB ObjectId)
 - **Request Body**:
@@ -540,7 +651,7 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 - **DELETE** `/api/pencil-holds/:id`
 - **Description**: Delete pencil hold
-- **Authentication**: Required
+- **Authentication**: Required (Admin or Organizer)
 - **Path Parameters**:
   - `id`: Pencil Hold ID (MongoDB ObjectId)
 
@@ -548,20 +659,44 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 - **GET** `/api/pencil-holds/my-holds`
 - **Description**: Get current user's pencil holds
-- **Authentication**: Required
+- **Authentication**: Required (Admin or Organizer)
 - **Query Parameters**:
   - `page` (optional): Page number (default: 1)
   - `limit` (optional): Items per page (default: 10)
 
-### 37. Confirm Pencil Hold (Admin)
+### 37. Confirm Pencil Hold (Organizer)
 
 - **PATCH** `/api/pencil-holds/:id/confirm`
-- **Description**: Confirm pencil hold
+- **Description**: Confirm pencil hold (convert to confirmed status)
+- **Authentication**: Required (Admin or Organizer)
+- **Path Parameters**:
+  - `id`: Pencil Hold ID (MongoDB ObjectId)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Pencil hold confirmed successfully"
+}
+```
+
+### 38. Approve Pencil Hold (Admin)
+
+- **PATCH** `/api/pencil-holds/:id/approve`
+- **Description**: Approve confirmed pencil hold (converts to event)
 - **Authentication**: Required (Admin only)
 - **Path Parameters**:
   - `id`: Pencil Hold ID (MongoDB ObjectId)
+- **Response**:
 
-### 38. Cancel Pencil Hold (Admin)
+```json
+{
+  "success": true,
+  "message": "Pencil hold approved successfully"
+}
+```
+
+### 38.1. Cancel Pencil Hold (Admin)
 
 - **PATCH** `/api/pencil-holds/:id/cancel`
 - **Description**: Cancel pencil hold
@@ -578,120 +713,152 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 ---
 
-## 🔔 **Subscription Management Endpoints**
+## 🔗 **Event Sharing Endpoints**
 
-### 39. Subscribe to Notifications
+### 39. Get Event Sharing Data
 
-- **POST** `/api/subscriptions`
-- **Description**: Subscribe to notifications
-- **Authentication**: Required
-- **Request Body**:
-
-```json
-{
-  "type": "email",
-  "preferences": {
-    "eventReminders": true,
-    "eventUpdates": true,
-    "weeklyDigest": false,
-    "newEvents": true,
-    "categorySpecific": [
-      {
-        "category": "64a1b2c3d4e5f6789012345",
-        "enabled": true
-      }
-    ]
-  }
-}
-```
-
-### 40. Unsubscribe
-
-- **DELETE** `/api/subscriptions/:id`
-- **Description**: Unsubscribe from notifications
-- **Authentication**: Required
+- **GET** `/api/sharing/events/:id/share`
+- **Description**: Get event data and sharing links
+- **Authentication**: None required
 - **Path Parameters**:
-  - `id`: Subscription ID (MongoDB ObjectId)
-
-### 41. Get My Subscriptions
-
-- **GET** `/api/subscriptions/my-subscriptions`
-- **Description**: Get current user's subscriptions
-- **Authentication**: Required
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 10)
-
-### 42. Update Subscription Preferences
-
-- **PUT** `/api/subscriptions/:id/preferences`
-- **Description**: Update subscription preferences
-- **Authentication**: Required
-- **Path Parameters**:
-  - `id`: Subscription ID (MongoDB ObjectId)
-- **Request Body**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Response**:
 
 ```json
 {
-  "preferences": {
-    "eventReminders": false,
-    "eventUpdates": true,
-    "weeklyDigest": true,
-    "newEvents": false
-  }
-}
-```
-
-### 43. Subscribe to Push Notifications
-
-- **POST** `/api/subscriptions/push`
-- **Description**: Subscribe to push notifications
-- **Authentication**: Required
-- **Request Body**:
-
-```json
-{
-  "subscription": {
-    "endpoint": "https://fcm.googleapis.com/fcm/send/...",
-    "keys": {
-      "p256dh": "BEl62iUYgUivxIkv69yViEuiBIa40HI...",
-      "auth": "tBHItJI5svbpez7KI4CCXg=="
+  "success": true,
+  "data": {
+    "event": {
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "title": "Event Title",
+      "description": "Event description",
+      "startDate": "2024-02-15T18:00:00Z",
+      "endDate": "2024-02-15T23:00:00Z",
+      "location": {...},
+      "category": {...},
+      "images": [...]
+    },
+    "sharing": {
+      "url": {
+        "facebook": "https://www.facebook.com/sharer/sharer.php?u=...",
+        "twitter": "https://twitter.com/intent/tweet?url=...",
+        "linkedin": "https://www.linkedin.com/sharing/share-offsite/?url=...",
+        "whatsapp": "https://wa.me/?text=...",
+        "telegram": "https://t.me/share/url?url=...",
+        "email": "mailto:?subject=...&body=..."
+      },
+      "copyText": "Check out this event: Event Title - [URL]"
     }
   }
 }
 ```
 
-### 44. Unsubscribe from Push Notifications
+### 40. Generate Shareable Link
 
-- **DELETE** `/api/subscriptions/push/:id`
-- **Description**: Unsubscribe from push notifications
-- **Authentication**: Required
+- **POST** `/api/sharing/events/:id/share/link`
+- **Description**: Generate shareable link for event
+- **Authentication**: None required
 - **Path Parameters**:
-  - `id`: Push subscription ID (MongoDB ObjectId)
+  - `id`: Event ID (MongoDB ObjectId)
+- **Response**:
 
-### 45. Get All Subscriptions (Admin)
+```json
+{
+  "success": true,
+  "data": {
+    "url": "https://yourapp.com/events/event-slug",
+    "title": "Event Title",
+    "description": "Event description",
+    "startDate": "2024-02-15T18:00:00Z",
+    "endDate": "2024-02-15T23:00:00Z",
+    "location": {...},
+    "category": {...},
+    "image": "https://example.com/image.jpg"
+  }
+}
+```
 
-- **GET** `/api/subscriptions`
-- **Description**: Get all subscriptions
-- **Authentication**: Required (Admin only)
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Items per page (default: 10)
-  - `type` (optional): Subscription type (email, push, sms, all)
-  - `status` (optional): Subscription status (active, paused, cancelled)
+### 41. Get Social Media Links
 
-### 46. Send Test Notification (Admin)
+- **GET** `/api/sharing/events/:id/share/social`
+- **Description**: Get social media sharing links
+- **Authentication**: None required
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
+- **Response**:
 
-- **POST** `/api/subscriptions/test`
-- **Description**: Send test notification
-- **Authentication**: Required (Admin only)
+```json
+{
+  "success": true,
+  "data": {
+    "facebook": "https://www.facebook.com/sharer/sharer.php?u=...",
+    "twitter": "https://twitter.com/intent/tweet?url=...",
+    "linkedin": "https://www.linkedin.com/sharing/share-offsite/?url=...",
+    "whatsapp": "https://wa.me/?text=...",
+    "telegram": "https://t.me/share/url?url=...",
+    "email": "mailto:?subject=...&body=..."
+  }
+}
+```
+
+### 42. Track Share Event
+
+- **POST** `/api/sharing/events/:id/share/track`
+- **Description**: Track when event is shared
+- **Authentication**: None required
+- **Path Parameters**:
+  - `id`: Event ID (MongoDB ObjectId)
 - **Request Body**:
 
 ```json
 {
-  "type": "email",
-  "message": "This is a test notification",
-  "targetUsers": ["64a1b2c3d4e5f6789012345", "64a1b2c3d4e5f6789012346"]
+  "platform": "facebook"
+}
+```
+
+- **Response**:
+
+```json
+{
+  "success": true,
+  "message": "Share tracked successfully"
+}
+```
+
+### 43. Get Event by Slug (Public)
+
+- **GET** `/api/sharing/events/slug/:slug`
+- **Description**: Get event by slug for public sharing
+- **Authentication**: None required
+- **Path Parameters**:
+  - `slug`: Event slug (URL-friendly identifier)
+- **Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "event": {
+      "id": "64a1b2c3d4e5f6789abcdef0",
+      "title": "Event Title",
+      "description": "Event description",
+      "slug": "event-slug",
+      "startDate": "2024-02-15T18:00:00Z",
+      "endDate": "2024-02-15T23:00:00Z",
+      "location": {...},
+      "category": {...},
+      "images": [...],
+      "price": 25.0,
+      "currency": "NZD",
+      "capacity": 200,
+      "registrationCount": 45,
+      "tags": [...],
+      "requirements": [...],
+      "contactInfo": {...},
+      "featured": false,
+      "createdAt": "2024-01-15T10:00:00Z"
+    }
+  }
 }
 ```
 
@@ -1087,30 +1254,114 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
 
 ---
 
-## 🔄 **Event Approval Workflow**
+## 🔄 **Event Status Workflow & State Machine**
 
-The event creation and approval system works as follows:
+The event management system now includes a comprehensive state machine with multiple statuses and workflows:
 
-1. **Organizers create events** → Events are saved with `status: "draft"` (not visible to public)
-2. **Admins view pending events** → Use `GET /api/admin/events/pending` to see draft events
-3. **Admins approve events** → Use `PATCH /api/admin/events/:id/approve` to publish events
-4. **OR Admins reject events** → Use `PATCH /api/admin/events/:id/reject` to cancel events
-5. **Approved events become visible** → Published events appear in public API (`GET /api/events`)
-
-### Event Status Flow:
+### **Event Status Flow:**
 
 ```
-draft → [admin approval] → published (visible to users)
-draft → [admin rejection] → cancelled (not visible to users)
+Draft → Pending Approval → Published → Unpublished
+  ↓           ↓              ↓
+Rejected   Rejected      Cancelled
+  ↓           ↓              ↓
+Deleted ← Deleted ← Deleted
 ```
 
-### New Event Model Fields:
+### **Status Definitions:**
 
+- **`draft`**: Initial status when organizer creates event (not visible to public)
+- **`pending_approval`**: Event submitted for admin review
+- **`published`**: Event approved and visible to public
+- **`rejected`**: Event rejected by admin (not visible to public)
+- **`unpublished`**: Published event taken down by admin
+- **`cancelled`**: Event cancelled (not visible to public)
+- **`completed`**: Event has finished
+- **`deleted`**: Event soft deleted (not visible to public)
+
+### **Pencil Hold Status Flow:**
+
+```
+Pending → Confirmed → Converted
+   ↓         ↓          ↓
+Cancelled  Expired   (Event Published)
+```
+
+### **Status Definitions:**
+
+- **`pending`**: Initial status when pencil hold is created
+- **`confirmed`**: Organizer has confirmed the pencil hold
+- **`converted`**: Admin approved and event was published
+- **`cancelled`**: Pencil hold was cancelled
+- **`expired`**: Pencil hold expired after 48 hours
+
+### **Workflow Process:**
+
+1. **Organizers create events** → Events saved with `status: "draft"`
+2. **Organizers submit for approval** → Status changes to `pending_approval`
+3. **Admins review events** → Use `GET /api/admin/events/pending`
+4. **Admins approve events** → Use `PATCH /api/admin/events/:id/approve` → Status: `published`
+5. **OR Admins reject events** → Use `PATCH /api/admin/events/:id/reject` → Status: `rejected`
+6. **Admins can unpublish** → Use `PATCH /api/events/:id/unpublish` → Status: `unpublished`
+7. **Soft delete events** → Use `DELETE /api/events/:id/soft` → Status: `deleted`
+8. **Restore deleted events** → Use `PATCH /api/events/:id/restore` → Status: `draft`
+
+### **Event Model Fields:**
+
+- `status`: Current event status (enum)
 - `approvedBy`: Admin who approved the event
 - `approvedAt`: When the event was approved
 - `rejectedBy`: Admin who rejected the event
 - `rejectedAt`: When the event was rejected
 - `rejectionReason`: Reason for rejection (max 500 characters)
+- `unpublishedBy`: Admin who unpublished the event
+- `unpublishedAt`: When the event was unpublished
+- `isDeleted`: Soft delete flag
+- `deletedAt`: When the event was soft deleted
+- `deletedBy`: Admin who soft deleted the event
+
+---
+
+## 🌐 **Public Features & Views**
+
+The API now supports multiple view types and public features for event discovery:
+
+### **View Types:**
+
+1. **List View** (default): Traditional paginated list of events
+2. **Grid View**: Card-based layout optimized for visual browsing
+3. **Calendar View**: Events grouped by date for calendar display
+
+### **Public Event Discovery:**
+
+- **Auto-hide past events**: Past events are automatically hidden from public views
+- **Event sharing**: Full social media sharing support
+- **Slug-based URLs**: Events accessible via SEO-friendly URLs
+- **Multiple view endpoints**: Dedicated endpoints for different view types
+
+### **Event Sharing Features:**
+
+- **Social Media Integration**: Facebook, Twitter, LinkedIn, WhatsApp, Telegram, Email
+- **Shareable Links**: Generate clean URLs for events
+- **Copy-to-clipboard**: Easy text sharing
+- **Analytics Tracking**: Track sharing events across platforms
+
+### **View Endpoints:**
+
+- `GET /api/events` - List view with view parameter
+- `GET /api/events/calendar` - Calendar view with date grouping
+- `GET /api/events/grid` - Grid view optimized for cards
+- `GET /api/events/slug/:slug` - Event by slug for sharing
+- `GET /api/sharing/events/:id/share` - Complete sharing data
+
+### **Query Parameters for Views:**
+
+- `view`: View type (list, grid, calendar)
+- `hidePast`: Hide past events (default: true)
+- `startDate`/`endDate`: Date range filtering
+- `category`: Category filtering
+- `search`: Text search across title/description
+- `sortBy`/`sortOrder`: Sorting options
 
 ---
 
@@ -1192,10 +1443,16 @@ Error responses follow this format:
 3. **Add user to whitelist (admin)**: `POST http://localhost:3000/api/admin/whitelist`
 4. **Google OAuth for organizer**: `GET http://localhost:3000/api/auth/google/organizer`
 5. **Google OAuth for admin**: `GET http://localhost:3000/api/auth/google/admin`
-6. **Get events**: `GET http://localhost:3000/api/events`
-7. **Create event (organizer)**: `POST http://localhost:3000/api/events`
-8. **View pending events (admin)**: `GET http://localhost:3000/api/admin/events/pending`
-9. **Approve event (admin)**: `PATCH http://localhost:3000/api/admin/events/:id/approve`
+6. **Get events (list view)**: `GET http://localhost:3000/api/events`
+7. **Get events (calendar view)**: `GET http://localhost:3000/api/events/calendar`
+8. **Get events (grid view)**: `GET http://localhost:3000/api/events/grid`
+9. **Create event (organizer)**: `POST http://localhost:3000/api/events`
+10. **View pending events (admin)**: `GET http://localhost:3000/api/admin/events/pending`
+11. **Approve event (admin)**: `PATCH http://localhost:3000/api/admin/events/:id/approve`
+12. **Get event sharing data**: `GET http://localhost:3000/api/sharing/events/:id/share`
+13. **Create pencil hold (organizer)**: `POST http://localhost:3000/api/pencil-holds`
+14. **Confirm pencil hold (organizer)**: `PATCH http://localhost:3000/api/pencil-holds/:id/confirm`
+15. **Approve pencil hold (admin)**: `PATCH http://localhost:3000/api/pencil-holds/:id/approve`
 
 ## 📋 **Testing Tools**
 

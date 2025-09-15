@@ -13,8 +13,15 @@ class EventService {
     endDate,
     sortBy = 'startDate',
     sortOrder = 'asc',
+    view = 'list', // list, grid, calendar
+    hidePast = true,
   }) {
-    const query = { status: 'published' };
+    const query = { status: 'published', isDeleted: false };
+
+    // Hide past events by default
+    if (hidePast) {
+      query.endDate = { $gte: new Date() };
+    }
 
     // Apply filters
     if (search) {
@@ -62,6 +69,7 @@ class EventService {
         total,
         pages: Math.ceil(total / limit),
       },
+      view,
     };
   }
 
@@ -70,6 +78,18 @@ class EventService {
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email');
+
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    return event;
+  }
+
+  async getEventBySlug(slug) {
+    const event = await Event.findBySlug(slug)
+      .populate('category', 'name color icon')
+      .populate('createdBy', 'name email');
 
     if (!event) {
       throw new Error('Event not found');
@@ -102,6 +122,34 @@ class EventService {
     return event;
   }
 
+  async updateEventByOrganizer(id, updateData, userId) {
+    // First check if the event exists and the user is the creator
+    const event = await Event.findById(id);
+
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    if (event.createdBy.toString() !== userId.toString()) {
+      throw new Error('Access denied. You can only update events you created');
+    }
+
+    // Update the event with the new data and set updatedBy
+    const updatedEvent = await Event.findByIdAndUpdate(
+      id,
+      {
+        ...updateData,
+        updatedBy: userId,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate('category', 'name color icon');
+
+    return updatedEvent;
+  }
+
   async deleteEvent(id) {
     const event = await Event.findByIdAndDelete(id);
 
@@ -117,93 +165,74 @@ class EventService {
     return event;
   }
 
-  async registerForEvent(eventId, userId, additionalInfo = {}) {
-    const event = await Event.findById(eventId);
+  async softDeleteEvent(id, deletedBy) {
+    const event = await Event.findById(id);
+
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    await event.softDelete(deletedBy);
+
+    return { message: 'Event deleted successfully' };
+  }
+
+  async restoreEvent(id) {
+    const event = await Event.findById(id);
+
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    if (!event.isDeleted) {
+      throw new Error('Event is not deleted');
+    }
+
+    await event.restore();
+
+    return { message: 'Event restored successfully' };
+  }
+
+  async unpublishEvent(id, adminId) {
+    const event = await Event.findById(id);
 
     if (!event) {
       throw new Error('Event not found');
     }
 
     if (event.status !== 'published') {
-      throw new Error('Event is not available for registration');
+      throw new Error('Only published events can be unpublished');
     }
 
-    if (event.registrationDeadline < new Date()) {
-      throw new Error('Registration deadline has passed');
-    }
-
-    if (event.registrationCount >= event.capacity) {
-      throw new Error('Event is at full capacity');
-    }
-
-    // Check if user is already registered
-    const existingRegistration = await Event.findOne({
-      _id: eventId,
-      'registrations.user': userId,
-    });
-
-    if (existingRegistration) {
-      throw new Error('User is already registered for this event');
-    }
-
-    // Add registration
-    event.registrations.push({
-      user: userId,
-      registeredAt: new Date(),
-      additionalInfo,
-    });
-
-    event.registrationCount += 1;
+    event.status = 'unpublished';
+    event.unpublishedBy = adminId;
+    event.unpublishedAt = new Date();
     await event.save();
 
-    return event.registrations[event.registrations.length - 1];
+    return { message: 'Event unpublished successfully' };
   }
 
-  async cancelEventRegistration(eventId, userId) {
-    const event = await Event.findById(eventId);
+  async deleteEventByOrganizer(id, userId) {
+    // First check if the event exists and the user is the creator
+    const event = await Event.findById(id);
 
     if (!event) {
       throw new Error('Event not found');
     }
 
-    const registrationIndex = event.registrations.findIndex(
-      reg => reg.user.toString() === userId.toString()
-    );
-
-    if (registrationIndex === -1) {
-      throw new Error('User is not registered for this event');
+    if (event.createdBy.toString() !== userId.toString()) {
+      throw new Error('Access denied. You can only delete events you created');
     }
 
-    event.registrations.splice(registrationIndex, 1);
-    event.registrationCount -= 1;
-    await event.save();
+    // Delete the event
+    const deletedEvent = await Event.findByIdAndDelete(id);
 
-    return { success: true };
-  }
+    // Update category event count
+    await Category.findByIdAndUpdate(deletedEvent.category, {
+      $inc: { eventCount: -1 },
+    });
 
-  async getEventRegistrations(eventId, { page = 1, limit = 10 }) {
-    const event = await Event.findById(eventId)
-      .populate('registrations.user', 'name email')
-      .select('registrations');
-
-    if (!event) {
-      throw new Error('Event not found');
-    }
-
-    const registrations = event.registrations.slice(
-      (page - 1) * limit,
-      page * limit
-    );
-
-    return {
-      registrations,
-      pagination: {
-        page,
-        limit,
-        total: event.registrations.length,
-        pages: Math.ceil(event.registrations.length / limit),
-      },
-    };
+    return deletedEvent;
   }
 
   async getUpcomingEvents(hours = 24) {
@@ -255,6 +284,106 @@ class EventService {
     });
 
     return { deletedCount: result.deletedCount };
+  }
+
+  async getEventsForCalendar({ startDate, endDate, category, search }) {
+    const query = {
+      status: 'published',
+      isDeleted: false,
+      endDate: { $gte: new Date() }, // Only future events
+    };
+
+    if (startDate) {
+      query.startDate = { $gte: new Date(startDate) };
+    }
+
+    if (endDate) {
+      query.endDate = { $lte: new Date(endDate) };
+    }
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } },
+      ];
+    }
+
+    const events = await Event.find(query)
+      .populate('category', 'name color icon')
+      .select('title startDate endDate location category images price currency')
+      .sort({ startDate: 1 });
+
+    // Group events by date for calendar view
+    const eventsByDate = {};
+    events.forEach(event => {
+      const dateKey = event.startDate.toISOString().split('T')[0];
+      if (!eventsByDate[dateKey]) {
+        eventsByDate[dateKey] = [];
+      }
+      eventsByDate[dateKey].push(event);
+    });
+
+    return {
+      events,
+      eventsByDate,
+      total: events.length,
+    };
+  }
+
+  async getEventsForGrid({
+    page = 1,
+    limit = 12,
+    category,
+    search,
+    sortBy = 'startDate',
+    sortOrder = 'asc',
+  }) {
+    const query = {
+      status: 'published',
+      isDeleted: false,
+      endDate: { $gte: new Date() }, // Only future events
+    };
+
+    if (category) {
+      query.category = category;
+    }
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } },
+      ];
+    }
+
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    const events = await Event.find(query)
+      .populate('category', 'name color icon')
+      .select(
+        'title description startDate endDate location category images price currency capacity registrationCount featured'
+      )
+      .sort(sort)
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const total = await Event.countDocuments(query);
+
+    return {
+      events,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
 }
 

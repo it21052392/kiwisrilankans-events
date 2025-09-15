@@ -18,9 +18,13 @@ export const USER_ROLES = {
 // Event statuses
 export const EVENT_STATUS = {
   DRAFT: 'draft',
+  PENDING_APPROVAL: 'pending_approval',
   PUBLISHED: 'published',
+  REJECTED: 'rejected',
+  UNPUBLISHED: 'unpublished',
   CANCELLED: 'cancelled',
   COMPLETED: 'completed',
+  DELETED: 'deleted',
 };
 
 // Event status based on dates
@@ -35,23 +39,9 @@ export const EVENT_DATE_STATUS = {
 export const PENCIL_HOLD_STATUS = {
   PENDING: 'pending',
   CONFIRMED: 'confirmed',
+  CONVERTED: 'converted',
   CANCELLED: 'cancelled',
   EXPIRED: 'expired',
-};
-
-// Subscription types
-export const SUBSCRIPTION_TYPES = {
-  EMAIL: 'email',
-  PUSH: 'push',
-  SMS: 'sms',
-  ALL: 'all',
-};
-
-// Subscription statuses
-export const SUBSCRIPTION_STATUS = {
-  ACTIVE: 'active',
-  PAUSED: 'paused',
-  CANCELLED: 'cancelled',
 };
 
 // File upload types
@@ -104,28 +94,6 @@ export const SORT_FIELDS = {
   REGISTRATION_COUNT: 'registrationCount',
 };
 
-// Notification types
-export const NOTIFICATION_TYPES = {
-  EVENT_REMINDER: 'event_reminder',
-  EVENT_UPDATE: 'event_update',
-  REGISTRATION_CONFIRMATION: 'registration_confirmation',
-  PENCIL_HOLD_UPDATE: 'pencil_hold_update',
-  WEEKLY_DIGEST: 'weekly_digest',
-  SYSTEM_ANNOUNCEMENT: 'system_announcement',
-};
-
-// Email templates
-export const EMAIL_TEMPLATES = {
-  WELCOME: 'welcome',
-  EVENT_REMINDER: 'event_reminder',
-  REGISTRATION_CONFIRMATION: 'registration_confirmation',
-  PASSWORD_RESET: 'password_reset',
-  EMAIL_VERIFICATION: 'email_verification',
-  WEEKLY_DIGEST: 'weekly_digest',
-  EVENT_CANCELLED: 'event_cancelled',
-  REGISTRATION_DEADLINE: 'registration_deadline',
-};
-
 // Cache keys
 export const CACHE_KEYS = {
   EVENTS: 'events',
@@ -170,7 +138,6 @@ export const COLLECTIONS = {
   EVENTS: 'events',
   CATEGORIES: 'categories',
   PENCIL_HOLDS: 'pencilholds',
-  SUBSCRIPTIONS: 'subscriptions',
   UPLOADS: 'uploads',
   SESSIONS: 'sessions',
   LOGS: 'logs',
@@ -205,13 +172,8 @@ export const SUCCESS_MESSAGES = {
   PENCIL_HOLD_DELETED: 'Pencil hold deleted successfully',
   PENCIL_HOLD_CONFIRMED: 'Pencil hold confirmed successfully',
   PENCIL_HOLD_CANCELLED: 'Pencil hold cancelled successfully',
-  SUBSCRIPTION_CREATED: 'Subscription created successfully',
-  SUBSCRIPTION_UPDATED: 'Subscription updated successfully',
-  SUBSCRIPTION_DELETED: 'Subscription deleted successfully',
   FILE_UPLOADED: 'File uploaded successfully',
   FILE_DELETED: 'File deleted successfully',
-  EMAIL_SENT: 'Email sent successfully',
-  NOTIFICATION_SENT: 'Notification sent successfully',
 };
 
 // Error messages
@@ -220,7 +182,6 @@ export const ERROR_MESSAGES = {
   EVENT_NOT_FOUND: 'Event not found',
   CATEGORY_NOT_FOUND: 'Category not found',
   PENCIL_HOLD_NOT_FOUND: 'Pencil hold not found',
-  SUBSCRIPTION_NOT_FOUND: 'Subscription not found',
   FILE_NOT_FOUND: 'File not found',
   INVALID_CREDENTIALS: 'Invalid credentials',
   ACCESS_DENIED: 'Access denied',
@@ -230,8 +191,6 @@ export const ERROR_MESSAGES = {
   FILE_TOO_LARGE: 'File too large',
   INVALID_FILE_TYPE: 'Invalid file type',
   UPLOAD_FAILED: 'File upload failed',
-  EMAIL_SEND_FAILED: 'Failed to send email',
-  NOTIFICATION_SEND_FAILED: 'Failed to send notification',
   DATABASE_ERROR: 'Database error occurred',
   EXTERNAL_SERVICE_ERROR: 'External service error',
   INTERNAL_SERVER_ERROR: 'Internal server error',

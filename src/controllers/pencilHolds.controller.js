@@ -118,19 +118,40 @@ const getMyPencilHolds = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Confirm pencil hold
+// @desc    Confirm pencil hold by organizer
 // @route   PATCH /api/pencil-holds/:id/confirm
-// @access  Private/Admin
+// @access  Private/Organizer
 const confirmPencilHold = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const userId = req.user._id;
 
-  const pencilHold = await pencilHoldService.confirmPencilHold(id);
+  const pencilHold = await pencilHoldService.confirmPencilHoldByOrganizer(
+    id,
+    userId
+  );
 
-  logger.info(`Pencil hold confirmed: ${id}`);
+  logger.info(`Pencil hold confirmed by organizer: ${id} - ${req.user.email}`);
 
   res.json({
     success: true,
-    message: 'Pencil hold confirmed successfully',
+    message: 'Pencil hold confirmed successfully. Waiting for admin approval.',
+    data: { pencilHold },
+  });
+});
+
+// @desc    Approve pencil hold (Admin)
+// @route   PATCH /api/pencil-holds/:id/approve
+// @access  Private/Admin
+const approvePencilHold = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const pencilHold = await pencilHoldService.approvePencilHold(id);
+
+  logger.info(`Pencil hold approved by admin: ${id}`);
+
+  res.json({
+    success: true,
+    message: 'Pencil hold approved successfully. Event is now published.',
     data: { pencilHold },
   });
 });
@@ -161,5 +182,6 @@ export {
   deletePencilHold,
   getMyPencilHolds,
   confirmPencilHold,
+  approvePencilHold,
   cancelPencilHold,
 };

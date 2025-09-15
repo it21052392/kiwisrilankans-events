@@ -31,9 +31,7 @@
     "pino": "^9.9.5",
     "pino-http": "^10.5.0",
     "pino-pretty": "^11.0.0",
-    "resend": "^6.0.3",
     "uuid": "^10.0.0",
-    "web-push": "^3.6.7",
     "zod": "^4.1.8"
   },
   "devDependencies": {
