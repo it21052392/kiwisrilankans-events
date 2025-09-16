@@ -211,7 +211,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {event.location}
+                            {event.location?.name || event.location?.address || 'Location TBD'}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mt-2">
