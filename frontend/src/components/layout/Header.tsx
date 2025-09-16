@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, X, Calendar, Users, Settings, LogOut, User } from 'lucide-react';
+import { Menu, X, Users, Settings, LogOut, User } from 'lucide-react';
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,30 +20,41 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Calendar className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Kiwi Sri Lankans Events</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/images/Logosnew.png"
+              alt="Kiwi Sri Lankans Events"
+              width={150}
+              height={50}
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link
+              href="/"
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Home
+            </Link>
             <Link
               href="/events"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Events
             </Link>
             <Link
               href="/events/calendar"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Calendar
             </Link>
             <Link
               href="/categories"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Categories
             </Link>
@@ -51,35 +63,35 @@ export function Header() {
               <div className="flex items-center space-x-4">
                 {user?.role === 'admin' && (
                   <Link href="/admin/dashboard">
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="default">
+                      <Settings className="h-5 w-5 mr-2" />
                       Admin
                     </Button>
                   </Link>
                 )}
                 {user?.role === 'organizer' && (
                   <Link href="/organizer/dashboard">
-                    <Button variant="outline" size="sm">
-                      <Users className="h-4 w-4 mr-2" />
+                    <Button variant="outline" size="default">
+                      <Users className="h-5 w-5 mr-2" />
                       Dashboard
                     </Button>
                   </Link>
                 )}
                 <Link href="/profile">
-                  <Button variant="ghost" size="sm">
-                    <User className="h-4 w-4 mr-2" />
+                  <Button variant="ghost" size="default">
+                    <User className="h-5 w-5 mr-2" />
                     Profile
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
+                <Button variant="ghost" size="default" onClick={handleLogout}>
+                  <LogOut className="h-5 w-5 mr-2" />
                   Logout
                 </Button>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <Link href="/auth/login">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="default">
                     Login
                   </Button>
                 </Link>
@@ -91,7 +103,7 @@ export function Header() {
           <div className="md:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="default">
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
@@ -99,21 +111,21 @@ export function Header() {
                 <div className="flex flex-col space-y-4 mt-6">
                   <Link
                     href="/events"
-                    className="text-sm font-medium hover:text-foreground transition-colors"
+                    className="text-base font-medium hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Events
                   </Link>
                   <Link
                     href="/events/calendar"
-                    className="text-sm font-medium hover:text-foreground transition-colors"
+                    className="text-base font-medium hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Calendar
                   </Link>
                   <Link
                     href="/categories"
-                    className="text-sm font-medium hover:text-foreground transition-colors"
+                    className="text-base font-medium hover:text-foreground transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
                     Categories
@@ -124,7 +136,7 @@ export function Header() {
                       {user?.role === 'admin' && (
                         <Link href="/admin/dashboard" onClick={() => setIsOpen(false)}>
                           <Button variant="outline" className="w-full justify-start">
-                            <Settings className="h-4 w-4 mr-2" />
+                            <Settings className="h-5 w-5 mr-2" />
                             Admin Dashboard
                           </Button>
                         </Link>
@@ -132,14 +144,14 @@ export function Header() {
                       {user?.role === 'organizer' && (
                         <Link href="/organizer/dashboard" onClick={() => setIsOpen(false)}>
                           <Button variant="outline" className="w-full justify-start">
-                            <Users className="h-4 w-4 mr-2" />
+                            <Users className="h-5 w-5 mr-2" />
                             Organizer Dashboard
                           </Button>
                         </Link>
                       )}
                       <Link href="/profile" onClick={() => setIsOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start">
-                          <User className="h-4 w-4 mr-2" />
+                          <User className="h-5 w-5 mr-2" />
                           Profile
                         </Button>
                       </Link>
@@ -148,7 +160,7 @@ export function Header() {
                         className="w-full justify-start text-red-600 hover:text-red-700"
                         onClick={handleLogout}
                       >
-                        <LogOut className="h-4 w-4 mr-2" />
+                        <LogOut className="h-5 w-5 mr-2" />
                         Logout
                       </Button>
                     </div>
