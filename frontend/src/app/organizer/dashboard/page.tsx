@@ -78,7 +78,6 @@ export default function OrganizerDashboard() {
   // Calculate stats
   const totalEvents = events.length;
   const upcomingEvents = events.filter(event => new Date(event.startDate) > new Date()).length;
-  const totalAttendees = events.reduce((sum, event) => sum + (event.attendeeCount || 0), 0);
   const pendingPencilHolds = pencilHolds.filter(hold => hold.status === 'pending').length;
 
   return (
@@ -117,18 +116,6 @@ export default function OrganizerDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalAttendees}</div>
-              <p className="text-xs text-muted-foreground">
-                Across all events
-              </p>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -198,7 +185,7 @@ export default function OrganizerDashboard() {
               ) : (
                 <div className="space-y-4">
                   {events.slice(0, 3).map((event) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={event._id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{event.title}</h4>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
@@ -215,9 +202,6 @@ export default function OrganizerDashboard() {
                           <Badge variant={event.status === 'published' ? 'default' : 'secondary'}>
                             {event.status}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {event.attendeeCount || 0} attendees
-                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 ml-4">
@@ -226,7 +210,7 @@ export default function OrganizerDashboard() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Link href={`/organizer/events/${event.id}/edit`}>
+                        <Link href={`/organizer/events/${event._id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -284,7 +268,7 @@ export default function OrganizerDashboard() {
                         </div>
                         <Badge 
                           variant={
-                            hold.status === 'approved' ? 'default' : 
+                            hold.status === 'confirmed' ? 'default' : 
                             hold.status === 'pending' ? 'secondary' : 
                             'destructive'
                           }

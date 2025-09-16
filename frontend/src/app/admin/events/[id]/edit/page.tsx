@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { 
   Calendar, 
   MapPin, 
@@ -212,10 +213,7 @@ export default function AdminEditEventPage() {
     }
   };
 
-  const handleReject = async () => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (!reason) return;
-
+  const handleReject = async (reason: string) => {
     try {
       await rejectEventMutation.mutateAsync({ id: eventId, reason });
       toast.success('Event rejected successfully');
@@ -312,34 +310,57 @@ export default function AdminEditEventPage() {
             {getStatusBadge(event.status)}
             {(event.status === 'draft' || event.status === 'pending_approval') && (
               <>
-                <Button
+                <ConfirmationDialog
+                  trigger={
+                    <Button
+                      variant="destructive"
+                      disabled={rejectEventMutation.isPending}
+                    >
+                      {rejectEventMutation.isPending ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Reject
+                        </>
+                      )}
+                    </Button>
+                  }
+                  title="Reject Event"
+                  description={`Are you sure you want to reject "${event.title}"? Please provide a reason for rejection.`}
                   variant="destructive"
-                  onClick={handleReject}
-                  disabled={rejectEventMutation.isPending}
-                >
-                  {rejectEventMutation.isPending ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleApprove}
-                  disabled={approveEventMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {approveEventMutation.isPending ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </>
-                  )}
-                </Button>
+                  onConfirm={() => {
+                    const reason = prompt('Please provide a reason for rejection:');
+                    if (reason) {
+                      handleReject(reason);
+                    }
+                  }}
+                  confirmText="Reject"
+                  cancelText="Cancel"
+                />
+                <ConfirmationDialog
+                  trigger={
+                    <Button
+                      disabled={approveEventMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {approveEventMutation.isPending ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Approve
+                        </>
+                      )}
+                    </Button>
+                  }
+                  title="Approve Event"
+                  description={`Are you sure you want to approve "${event.title}"? This will make the event visible to all users.`}
+                  variant="success"
+                  onConfirm={handleApprove}
+                  confirmText="Approve"
+                  cancelText="Cancel"
+                />
               </>
             )}
           </div>

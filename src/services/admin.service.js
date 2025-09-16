@@ -259,27 +259,6 @@ class AdminService {
       throw new Error('Event not found');
     }
 
-    const registrations = await Event.aggregate([
-      { $match: { _id: event._id } },
-      { $unwind: '$registrations' },
-      {
-        $group: {
-          _id: null,
-          totalRegistrations: { $sum: 1 },
-          registrationsByDay: {
-            $push: {
-              date: {
-                $dateToString: {
-                  format: '%Y-%m-%d',
-                  date: '$registrations.registeredAt',
-                },
-              },
-            },
-          },
-        },
-      },
-    ]);
-
     const pencilHolds = await PencilHold.find({ event: eventId })
       .populate('user', 'name email')
       .sort({ createdAt: -1 });
@@ -290,18 +269,12 @@ class AdminService {
         title: event.title,
         status: event.status,
         capacity: event.capacity,
-        registrationCount: event.registrationCount,
         pencilHoldCount: event.pencilHoldCount,
         startDate: event.startDate,
         endDate: event.endDate,
       },
       analytics: {
-        totalRegistrations: registrations[0]?.totalRegistrations || 0,
         totalPencilHolds: pencilHolds.length,
-        registrationRate:
-          event.capacity > 0
-            ? (event.registrationCount / event.capacity) * 100
-            : 0,
         pencilHoldRate:
           event.capacity > 0
             ? (event.pencilHoldCount / event.capacity) * 100

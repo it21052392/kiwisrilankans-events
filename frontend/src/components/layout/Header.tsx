@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Menu, X, Users, Settings, LogOut, User } from 'lucide-react';
 
 export function Header() {
@@ -83,10 +84,20 @@ export function Header() {
                     Profile
                   </Button>
                 </Link>
-                <Button variant="ghost" size="default" onClick={handleLogout}>
-                  <LogOut className="h-5 w-5 mr-2" />
-                  Logout
-                </Button>
+                <ConfirmationDialog
+                  trigger={
+                    <Button variant="ghost" size="default">
+                      <LogOut className="h-5 w-5 mr-2" />
+                      Logout
+                    </Button>
+                  }
+                  title="Logout"
+                  description="Are you sure you want to logout? You will need to sign in again to access your account."
+                  variant="warning"
+                  onConfirm={handleLogout}
+                  confirmText="Logout"
+                  cancelText="Cancel"
+                />
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -155,14 +166,23 @@ export function Header() {
                           Profile
                         </Button>
                       </Link>
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start text-red-600 hover:text-red-700"
-                        onClick={handleLogout}
-                      >
-                        <LogOut className="h-5 w-5 mr-2" />
-                        Logout
-                      </Button>
+                      <ConfirmationDialog
+                        trigger={
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start text-red-600 hover:text-red-700"
+                          >
+                            <LogOut className="h-5 w-5 mr-2" />
+                            Logout
+                          </Button>
+                        }
+                        title="Logout"
+                        description="Are you sure you want to logout? You will need to sign in again to access your account."
+                        variant="warning"
+                        onConfirm={handleLogout}
+                        confirmText="Logout"
+                        cancelText="Cancel"
+                      />
                     </div>
                   ) : (
                     <div className="flex flex-col space-y-2 pt-4 border-t">

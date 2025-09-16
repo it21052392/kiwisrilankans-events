@@ -169,10 +169,6 @@ const eventSchema = new mongoose.Schema(
         maxlength: [20, 'Phone cannot exceed 20 characters'],
       },
     },
-    registrationCount: {
-      type: Number,
-      default: 0,
-    },
     pencilHoldCount: {
       type: Number,
       default: 0,
@@ -270,7 +266,7 @@ eventSchema.index({ featured: 1, status: 1 });
 
 // Virtual for available spots
 eventSchema.virtual('availableSpots').get(function () {
-  return this.capacity - this.registrationCount;
+  return this.capacity;
 });
 
 // Virtual for registration status

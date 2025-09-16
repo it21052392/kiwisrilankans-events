@@ -70,7 +70,6 @@ class SharingService {
       price: event.price,
       currency: event.currency,
       capacity: event.capacity,
-      registrationCount: event.registrationCount,
       tags: event.tags,
       requirements: event.requirements,
       contactInfo: event.contactInfo,

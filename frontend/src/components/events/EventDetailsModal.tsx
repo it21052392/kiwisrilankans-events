@@ -204,7 +204,7 @@ export function EventDetailsModal({
                     <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm text-muted-foreground">Capacity:</span>
-                      <div className="text-sm font-medium">{event.attendeeCount || 0} / {event.capacity} attendees</div>
+                      <div className="text-sm font-medium">{event.capacity} capacity</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

@@ -72,7 +72,6 @@ export interface Event {
     name: string;
     email: string;
   };
-  registrationCount: number;
   pencilHoldCount: number;
   pencilHoldInfo?: {
     pencilHoldId: string;
@@ -95,6 +94,7 @@ export interface EventFilters {
   hidePast?: boolean;
   page?: number;
   limit?: number;
+  organizerId?: string;
 }
 
 interface EventState {

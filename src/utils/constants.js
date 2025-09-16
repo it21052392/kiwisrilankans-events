@@ -91,7 +91,6 @@ export const SORT_FIELDS = {
   END_DATE: 'endDate',
   PRICE: 'price',
   CAPACITY: 'capacity',
-  REGISTRATION_COUNT: 'registrationCount',
 };
 
 // Cache keys

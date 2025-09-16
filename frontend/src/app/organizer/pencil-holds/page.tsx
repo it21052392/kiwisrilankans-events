@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { 
   Clock, 
   Plus, 
@@ -196,10 +197,6 @@ export default function OrganizerPencilHoldsPage() {
   };
 
   const handleDeletePencilHold = async (pencilHoldId: string) => {
-    if (!confirm('Are you sure you want to delete this pencil hold? This action cannot be undone.')) {
-      return;
-    }
-
     setIsDeleting(pencilHoldId);
     try {
       await deletePencilHoldMutation.mutateAsync(pencilHoldId);
@@ -422,19 +419,28 @@ export default function OrganizerPencilHoldsPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePencilHold(pencilHold._id)}
-                        disabled={isDeleting === pencilHold._id}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        {isDeleting === pencilHold._id ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <ConfirmationDialog
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isDeleting === pencilHold._id}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {isDeleting === pencilHold._id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        }
+                        title="Delete Pencil Hold"
+                        description={`Are you sure you want to delete this pencil hold? This action cannot be undone.`}
+                        variant="destructive"
+                        onConfirm={() => handleDeletePencilHold(pencilHold._id)}
+                        confirmText="Delete"
+                        cancelText="Cancel"
+                      />
                     </div>
                   </div>
                 </CardHeader>

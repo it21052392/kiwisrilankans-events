@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { 
   Calendar, 
   Plus, 
@@ -62,10 +63,6 @@ export default function OrganizerEventsPage() {
   const categories = categoriesData?.data?.categories || [];
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      return;
-    }
-
     setIsDeleting(eventId);
     try {
       await eventsService.deleteEventByOrganizer(eventId);
@@ -217,19 +214,28 @@ export default function OrganizerEventsPage() {
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteEvent(event._id)}
-                        disabled={isDeleting === event._id}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        {isDeleting === event._id ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <ConfirmationDialog
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isDeleting === event._id}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {isDeleting === event._id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        }
+                        title="Delete Event"
+                        description={`Are you sure you want to delete "${event.title}"? This action cannot be undone and will remove the event permanently.`}
+                        variant="destructive"
+                        onConfirm={() => handleDeleteEvent(event._id)}
+                        confirmText="Delete"
+                        cancelText="Cancel"
+                      />
                     </div>
                   </div>
                 </CardHeader>
@@ -249,7 +255,7 @@ export default function OrganizerEventsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{event.attendeeCount || 0} / {event.capacity} attendees</span>
+                      <span>{event.capacity} capacity</span>
                     </div>
                   </div>
                   
@@ -299,9 +305,9 @@ export default function OrganizerEventsPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {events.reduce((sum, e) => sum + (e.attendeeCount || 0), 0)}
+                    {events.length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Total Attendees</div>
+                  <div className="text-sm text-muted-foreground">Total Events</div>
                 </div>
               </div>
             </CardContent>

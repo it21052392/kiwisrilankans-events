@@ -40,7 +40,7 @@ class PencilHoldService {
 
   async getPencilHoldById(id) {
     const pencilHold = await PencilHold.findById(id)
-      .populate('event', 'title startDate location capacity registrationCount')
+      .populate('event', 'title startDate location capacity')
       .populate('user', 'name email')
       .populate('createdBy', 'name email');
 
@@ -71,10 +71,6 @@ class PencilHoldService {
       event.status === 'pencil_hold_confirmed'
     ) {
       throw new Error('Event already has a pencil hold');
-    }
-
-    if (event.registrationCount >= event.capacity) {
-      throw new Error('Event is at full capacity');
     }
 
     // Check for time/location conflicts with other penciled events
@@ -191,7 +187,7 @@ class PencilHoldService {
     }
 
     const pencilHolds = await PencilHold.find(query)
-      .populate('event', 'title startDate location capacity registrationCount')
+      .populate('event', 'title startDate location capacity')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -236,10 +232,7 @@ class PencilHoldService {
     }
 
     const pencilHolds = await PencilHold.find(query)
-      .populate(
-        'event',
-        'title startDate location capacity registrationCount createdBy'
-      )
+      .populate('event', 'title startDate location capacity createdBy')
       .populate('user', 'name email')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -274,10 +267,7 @@ class PencilHoldService {
     }
 
     // Check if event still has capacity
-    const event = await Event.findById(pencilHold.event);
-    if (event.registrationCount >= event.capacity) {
-      throw new Error('Event is at full capacity');
-    }
+    const _event = await Event.findById(pencilHold.event);
 
     await pencilHold.confirm();
     return await this.getPencilHoldById(id);
@@ -305,9 +295,6 @@ class PencilHoldService {
 
     // Check if event still has capacity
     const event = await Event.findById(pencilHold.event);
-    if (event.registrationCount >= event.capacity) {
-      throw new Error('Event is at full capacity');
-    }
 
     await pencilHold.confirm();
 
@@ -336,7 +323,7 @@ class PencilHoldService {
 
   async getPendingPencilHolds() {
     return await PencilHold.findPending()
-      .populate('event', 'title startDate location capacity registrationCount')
+      .populate('event', 'title startDate location capacity')
       .populate('user', 'name email');
   }
 

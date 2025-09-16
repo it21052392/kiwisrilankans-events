@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { 
   Calendar, 
   Search, 
@@ -95,10 +96,7 @@ export default function AdminEventsPage() {
     }
   };
 
-  const handleRejectEvent = async (eventId: string) => {
-    const reason = prompt('Please provide a reason for rejection:');
-    if (!reason) return;
-
+  const handleRejectEvent = async (eventId: string, reason: string) => {
     try {
       await rejectEventMutation.mutateAsync({ id: eventId, reason });
       toast.success('Event rejected successfully');
@@ -278,38 +276,61 @@ export default function AdminEventsPage() {
                       </Link>
                       {(event.status === 'pending_approval' || event.status === 'draft' || event.status === 'pencil_hold_confirmed') && (
                         <>
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveEvent(event._id)}
-                            disabled={approveEventMutation.isPending}
-                            className="bg-green-600 hover:bg-green-700"
+                          <ConfirmationDialog
+                            trigger={
+                              <Button
+                                size="sm"
+                                disabled={approveEventMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                                title="Approve Event"
+                              >
+                                {approveEventMutation.isPending ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Approve
+                                  </>
+                                )}
+                              </Button>
+                            }
                             title="Approve Event"
-                          >
-                            {approveEventMutation.isPending ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleRejectEvent(event._id)}
-                            disabled={rejectEventMutation.isPending}
+                            description={`Are you sure you want to approve "${event.title}"? This will make the event visible to all users.`}
+                            variant="success"
+                            onConfirm={() => handleApproveEvent(event._id)}
+                            confirmText="Approve"
+                            cancelText="Cancel"
+                          />
+                          <ConfirmationDialog
+                            trigger={
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={rejectEventMutation.isPending}
+                                title="Reject Event"
+                              >
+                                {rejectEventMutation.isPending ? (
+                                  <LoadingSpinner size="sm" />
+                                ) : (
+                                  <>
+                                    <XCircle className="h-4 w-4 mr-1" />
+                                    Reject
+                                  </>
+                                )}
+                              </Button>
+                            }
                             title="Reject Event"
-                          >
-                            {rejectEventMutation.isPending ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <>
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </>
-                            )}
-                          </Button>
+                            description={`Are you sure you want to reject "${event.title}"? Please provide a reason for rejection.`}
+                            variant="destructive"
+                            onConfirm={() => {
+                              const reason = prompt('Please provide a reason for rejection:');
+                              if (reason) {
+                                handleRejectEvent(event._id, reason);
+                              }
+                            }}
+                            confirmText="Reject"
+                            cancelText="Cancel"
+                          />
                         </>
                       )}
                     </div>
@@ -331,7 +352,7 @@ export default function AdminEventsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>{event.attendeeCount || 0} / {event.capacity} attendees</span>
+                      <span>{event.capacity} capacity</span>
                     </div>
                   </div>
                   

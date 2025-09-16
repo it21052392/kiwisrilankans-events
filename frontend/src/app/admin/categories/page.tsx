@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { 
   Tag, 
   Search, 
@@ -136,10 +137,6 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-      return;
-    }
-
     setIsDeleting(categoryId);
     try {
       await deleteCategoryMutation.mutateAsync(categoryId);
@@ -370,19 +367,28 @@ export default function AdminCategoriesPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(category._id)}
-                        disabled={isDeleting === category._id}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        {isDeleting === category._id ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <ConfirmationDialog
+                        trigger={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isDeleting === category._id}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {isDeleting === category._id ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        }
+                        title="Delete Category"
+                        description={`Are you sure you want to delete "${category.name}"? This action cannot be undone and will affect all events using this category.`}
+                        variant="destructive"
+                        onConfirm={() => handleDeleteCategory(category._id)}
+                        confirmText="Delete"
+                        cancelText="Cancel"
+                      />
                     </div>
                   </div>
                 </CardHeader>

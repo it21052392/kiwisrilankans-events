@@ -197,7 +197,7 @@ export default function EventDetailPage() {
                     <div>
                       <div className="font-semibold">Capacity</div>
                       <div className="text-sm text-muted-foreground">
-                        {event.capacity} attendees
+                        {event.capacity} people
                       </div>
                     </div>
                   </div>

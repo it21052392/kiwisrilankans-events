@@ -17,19 +17,16 @@ class EventService {
     hidePast = true,
     organizerId,
   }) {
-    console.log('getEvents called with organizerId:', organizerId);
     const query = { isDeleted: false };
 
     // If organizerId is provided, show all events by that organizer regardless of status
     // Otherwise, show published and pencil hold events
     if (organizerId) {
       query.createdBy = organizerId;
-      console.log('Filtering by organizerId:', organizerId);
     } else {
       query.status = {
         $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'],
       };
-      console.log('Filtering by published and pencil hold events');
     }
 
     // Hide past events by default (only for public view, not for organizer view)
@@ -66,8 +63,6 @@ class EventService {
     const sort = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-    console.log('Final query:', JSON.stringify(query, null, 2));
-
     const events = await Event.find(query)
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
@@ -76,8 +71,6 @@ class EventService {
       .limit(limit);
 
     const total = await Event.countDocuments(query);
-
-    console.log('Found events:', events.length, 'Total:', total);
 
     return {
       events,
@@ -105,16 +98,9 @@ class EventService {
   }
 
   async getEventBySlug(slug) {
-    console.log('Looking for event with slug:', slug);
-
     const event = await Event.findBySlug(slug)
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email');
-
-    console.log('Found event:', event ? 'Yes' : 'No');
-    if (event) {
-      console.log('Event status:', event.status);
-    }
 
     if (!event) {
       throw new Error('Event not found');
@@ -396,7 +382,7 @@ class EventService {
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
       .select(
-        'title description startDate endDate location category images price currency capacity registrationCount featured status pencilHoldInfo createdBy'
+        'title description startDate endDate location category images price currency capacity featured status pencilHoldInfo createdBy'
       )
       .sort(sort)
       .skip((page - 1) * limit)
