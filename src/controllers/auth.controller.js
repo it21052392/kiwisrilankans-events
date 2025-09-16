@@ -47,7 +47,9 @@ const googleCallback = asyncHandler(async (req, res) => {
   if (!code || !state) {
     return res
       .status(400)
-      .redirect(`${process.env.FRONTEND_URL}?error=missing_parameters`);
+      .redirect(
+        `${process.env.FRONTEND_URL || 'http://localhost:5000'}/auth/callback?error=missing_parameters`
+      );
   }
 
   const { user, accessToken, refreshToken } =
@@ -64,9 +66,9 @@ const googleCallback = asyncHandler(async (req, res) => {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
 
-  // Redirect to frontend with token and role
+  // Redirect to frontend callback with token and role
   res.redirect(
-    `${process.env.FRONTEND_URL}?token=${accessToken}&role=${user.role}`
+    `${process.env.FRONTEND_URL || 'http://localhost:5000'}/auth/callback?token=${accessToken}&role=${user.role}`
   );
 });
 
@@ -74,7 +76,7 @@ const googleCallback = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/refresh
 // @access  Public
 const refreshToken = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.cookies;
+  const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
     return res.status(401).json({
@@ -104,7 +106,7 @@ const refreshToken = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Private
 const logout = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.cookies;
+  const refreshToken = req.cookies?.refreshToken;
 
   if (refreshToken) {
     await authService.logout(refreshToken);

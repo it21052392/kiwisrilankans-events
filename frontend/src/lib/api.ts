@@ -34,6 +34,7 @@ class ApiClient {
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },
+      credentials: 'include', // Include cookies in requests
       ...options,
     };
 
@@ -132,6 +133,7 @@ class ApiClient {
       headers: {
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       },
+      credentials: 'include', // Include cookies in requests
       body: formData,
     });
 

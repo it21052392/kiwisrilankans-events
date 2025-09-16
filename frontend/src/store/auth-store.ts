@@ -54,10 +54,13 @@ export const useAuthStore = create<AuthState>()(
       
       logout: async () => {
         try {
+          // Try to logout on the server, but don't fail if it doesn't work
           await authService.logout();
         } catch (error) {
-          console.error('Logout error:', error);
+          // Log the error but don't throw it - we still want to clear local state
+          console.warn('Logout API call failed, but clearing local state:', error);
         } finally {
+          // Always clear local state regardless of API call success
           set({
             user: null,
             accessToken: null,
