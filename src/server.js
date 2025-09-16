@@ -4,7 +4,7 @@ import { logger } from './config/logger.js';
 import { env } from './config/env.js';
 
 const PORT = env.PORT || 3000;
-const HOST = env.HOST || 'localhost';
+const HOST = env.HOST || '0.0.0.0';
 
 // Connect to database
 connectDB();
