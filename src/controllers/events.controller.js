@@ -212,6 +212,34 @@ const getEventBySlug = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get search suggestions
+// @route   GET /api/events/search/suggestions
+// @access  Public
+const getSearchSuggestions = asyncHandler(async (req, res) => {
+  const { q: searchTerm, limit = 10 } = req.query;
+
+  if (!searchTerm || searchTerm.length < 2) {
+    return res.json({
+      success: true,
+      data: {
+        suggestions: [],
+        tags: [],
+        total: 0,
+      },
+    });
+  }
+
+  const suggestions = await eventService.getSearchSuggestions(
+    searchTerm,
+    parseInt(limit)
+  );
+
+  res.json({
+    success: true,
+    data: suggestions,
+  });
+});
+
 // @desc    Soft delete event
 // @route   DELETE /api/events/:id/soft
 // @access  Admin
@@ -273,6 +301,7 @@ export {
   getEventsForCalendar,
   getEventsForGrid,
   getEventBySlug,
+  getSearchSuggestions,
   softDeleteEvent,
   restoreEvent,
   unpublishEvent,

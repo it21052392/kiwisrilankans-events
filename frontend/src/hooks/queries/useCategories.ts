@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoriesService } from '@/services/categories.service';
 
+const defaultFilters = {};
+
 export const useCategories = (filters: {
   page?: number;
   limit?: number;
   search?: string;
   active?: boolean;
-} = {}) => {
+} = defaultFilters) => {
   return useQuery({
     queryKey: ['categories', filters],
     queryFn: () => categoriesService.getCategories(filters),

@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SearchInput } from '@/components/ui/search-input';
 import { useCalendarEvents } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { 
@@ -18,7 +20,10 @@ import {
   MapPin, 
   Users,
   Star,
-  MoreHorizontal
+  MoreHorizontal,
+  Search,
+  Filter,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,17 +33,22 @@ export default function CalendarPage() {
     category: '',
     search: '',
   });
+  const [debouncedFilters, setDebouncedFilters] = useState({
+    category: '',
+    search: '',
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
-  const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useCalendarEvents(filters);
+  const { data: eventsData, isLoading: eventsLoading, error: eventsError, isFetching } = useCalendarEvents(debouncedFilters);
   const { data: categoriesData } = useCategories();
 
   const events = eventsData?.data?.events || [];
   const eventsByDate = eventsData?.data?.eventsByDate || {};
   const categories = categoriesData?.data?.categories || [];
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
@@ -121,6 +131,97 @@ export default function CalendarPage() {
     return `/events/${slug}`;
   };
 
+  // Year and month navigation
+  const navigateToMonth = (year: number, month: number) => {
+    setCurrentDate(new Date(year, month, 1));
+  };
+
+  const navigateToYear = (year: number) => {
+    setCurrentDate(new Date(year, currentDate.getMonth(), 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Generate year options (current year ± 5 years)
+  const getYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+      years.push(year);
+    }
+    return years;
+  };
+
+  // Generate month options
+  const getMonthOptions = () => {
+    return [
+      { value: 0, label: 'January' },
+      { value: 1, label: 'February' },
+      { value: 2, label: 'March' },
+      { value: 3, label: 'April' },
+      { value: 4, label: 'May' },
+      { value: 5, label: 'June' },
+      { value: 6, label: 'July' },
+      { value: 7, label: 'August' },
+      { value: 8, label: 'September' },
+      { value: 9, label: 'October' },
+      { value: 10, label: 'November' },
+      { value: 11, label: 'December' },
+    ];
+  };
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setFilters({
+      category: '',
+      search: '',
+    });
+    setDebouncedFilters({
+      category: '',
+      search: '',
+    });
+  }, []);
+
+  // Handle search input change with debouncing - removed since we now use a search button
+
+  // Handle category filter change immediately (no debouncing needed)
+  useEffect(() => {
+    setDebouncedFilters(prev => ({ ...prev, category: filters.category }));
+  }, [filters.category]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return; // Don't handle keyboard shortcuts when typing in inputs
+      }
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          event.preventDefault();
+          navigateMonth('prev');
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          navigateMonth('next');
+          break;
+        case 'Home':
+          event.preventDefault();
+          goToToday();
+          break;
+        case 'Escape':
+          event.preventDefault();
+          setShowFilters(false);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentDate]);
+
   if (eventsLoading) {
     return (
       <PublicLayout>
@@ -159,42 +260,159 @@ export default function CalendarPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Event Calendar
-          </h1>
-          <p className="text-xl text-muted-foreground">
+          <div className="flex items-center gap-3 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+              Event Calendar
+            </h1>
+            {isFetching && eventsData && (
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            )}
+          </div>
+          <p className="text-xl text-muted-foreground mb-2">
             View events in a calendar format
           </p>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">←</kbd>
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">→</kbd>
+              Navigate months
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Home</kbd>
+              Go to today
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Esc</kbd>
+              Close filters
+            </span>
+          </div>
         </div>
 
-        {/* Filters */}
+        {/* Enhanced Filters */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full sm:w-64">
-              <Select value={filters.category || "all"} onValueChange={(value) => handleFilterChange('category', value === "all" ? "" : value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category._id} value={category._id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              {/* Search Input with Suggestions */}
+              <div className="flex-1 sm:max-w-md">
+                <SearchInput
+                  value={filters.search}
+                  onChange={(value) => handleFilterChange('search', value)}
+                  placeholder="Search events..."
+                />
+              </div>
+
+              {/* Filter Toggle Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {(filters.category || filters.search) && (
+                  <Badge variant="secondary" className="ml-1">
+                    {[filters.category && 'Category', filters.search && 'Search'].filter(Boolean).length}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+
+            {/* Year/Month Navigation */}
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <div className="flex gap-2">
+                <Select
+                  value={currentDate.getFullYear().toString()}
+                  onValueChange={(value) => navigateToYear(parseInt(value))}
+                >
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getYearOptions().map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={currentDate.getMonth().toString()}
+                  onValueChange={(value) => navigateToMonth(currentDate.getFullYear(), parseInt(value))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getMonthOptions().map((month) => (
+                      <SelectItem key={month.value} value={month.value.toString()}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button variant="outline" size="sm" onClick={goToToday}>
+                Today
+              </Button>
             </div>
           </div>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg border">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                  <div className="w-full sm:w-64">
+                    <label className="text-sm font-medium mb-2 block">Category</label>
+                    <Select 
+                      value={filters.category || "all"} 
+                      onValueChange={(value) => handleFilterChange('category', value === "all" ? "" : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category._id} value={category._id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowFilters(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Calendar */}
         <div className="bg-card rounded-lg border p-6">
           {/* Calendar Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-semibold">
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </h2>
+              {filters.search && (
+                <Badge variant="secondary" className="text-sm">
+                  {events.length} event{events.length !== 1 ? 's' : ''} found
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
                 <ChevronLeft className="h-4 w-4" />

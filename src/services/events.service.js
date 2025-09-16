@@ -410,6 +410,59 @@ class EventService {
       },
     };
   }
+
+  // Search suggestions for autocomplete
+  async getSearchSuggestions(searchTerm, limit = 10) {
+    if (!searchTerm || searchTerm.length < 2) {
+      return {
+        suggestions: [],
+        total: 0,
+      };
+    }
+
+    const query = {
+      status: 'published',
+      isDeleted: false,
+      endDate: { $gte: new Date() }, // Only future events
+      $or: [
+        { title: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { tags: { $in: [new RegExp(searchTerm, 'i')] } },
+      ],
+    };
+
+    const events = await Event.find(query)
+      .populate('category', 'name color icon')
+      .select(
+        '_id title slug startDate endDate location category price currency'
+      )
+      .sort({ startDate: 1 })
+      .limit(limit);
+
+    // Extract unique tags that match the search term
+    const allEvents = await Event.find({
+      status: 'published',
+      isDeleted: false,
+      endDate: { $gte: new Date() },
+      tags: { $in: [new RegExp(searchTerm, 'i')] },
+    }).select('tags');
+
+    const matchingTags = [
+      ...new Set(
+        allEvents.flatMap(event =>
+          event.tags.filter(tag =>
+            tag.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        )
+      ),
+    ].slice(0, 5);
+
+    return {
+      suggestions: events,
+      tags: matchingTags,
+      total: events.length,
+    };
+  }
 }
 
 export const eventService = new EventService();

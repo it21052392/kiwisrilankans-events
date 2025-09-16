@@ -10,6 +10,7 @@ import {
   getEventsForCalendar,
   getEventsForGrid,
   getEventBySlug,
+  getSearchSuggestions,
   softDeleteEvent,
   restoreEvent,
   unpublishEvent,
@@ -30,6 +31,7 @@ const router = express.Router();
 router.get('/', validateQuery(eventSchemas.getEventsQuery), getEvents);
 router.get('/calendar', getEventsForCalendar);
 router.get('/grid', getEventsForGrid);
+router.get('/search/suggestions', getSearchSuggestions);
 router.get('/slug/:slug', getEventBySlug);
 router.get('/:id', validateParams(commonSchemas.mongoId), getEventById);
 
