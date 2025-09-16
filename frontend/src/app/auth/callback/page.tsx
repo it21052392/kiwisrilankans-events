@@ -6,18 +6,24 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuthStore } from '@/store/auth-store';
 import { CheckCircle, XCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuthStore();
+  const { toast } = useToast();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
+  const [hasProcessed, setHasProcessed] = useState(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessed) return;
+    
     const handleCallback = async () => {
       try {
+        setHasProcessed(true);
         const token = searchParams.get('token');
         const role = searchParams.get('role');
         const error = searchParams.get('error');
@@ -84,7 +90,11 @@ export default function AuthCallbackPage() {
           
           setStatus('success');
           setMessage(`Welcome back! Redirecting to your ${role} dashboard...`);
-          toast.success(`Welcome back! Redirecting to your ${role} dashboard...`);
+          // Show toast notification using custom toast system
+          toast({
+            title: 'Welcome back!',
+            description: `Redirecting to your ${role} dashboard...`,
+          });
 
           // Redirect to appropriate dashboard
           setTimeout(() => {
@@ -121,7 +131,7 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [searchParams, login, router]);
+  }, [searchParams, login, router, hasProcessed]);
 
   return (
     <AuthLayout 
