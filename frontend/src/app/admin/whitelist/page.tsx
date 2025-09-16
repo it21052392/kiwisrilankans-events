@@ -21,11 +21,9 @@ import {
   XCircle,
   AlertCircle,
   User,
-  Calendar,
-  MoreHorizontal
+  Calendar
 } from 'lucide-react';
 import { useAdminWhitelist, useAddToWhitelist, useRemoveFromWhitelist } from '@/hooks/queries/useAdminWhitelist';
-import { adminWhitelistService } from '@/services/admin-whitelist.service';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 

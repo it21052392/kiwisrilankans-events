@@ -76,12 +76,12 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         const { accessToken } = get();
         if (!accessToken) {
-          set({ isAuthenticated: false, user: null });
+          set({ isAuthenticated: false, user: null, isLoading: false });
           return;
         }
 
         try {
-          set({ isLoading: true });
+          set({ isLoading: true, error: null });
           const response = await authService.getCurrentUser();
           set({
             user: response.data.user,
@@ -89,34 +89,48 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Auth check failed:', error);
+          
+          // If it's a 401 error, try to refresh the token
+          if (error.status === 401) {
+            try {
+              await get().refreshToken();
+              return; // refreshToken will update the state
+            } catch (refreshError) {
+              console.error('Token refresh failed during auth check:', refreshError);
+            }
+          }
+          
           set({
             user: null,
             accessToken: null,
             isAuthenticated: false,
             isLoading: false,
-            error: 'Authentication failed',
+            error: error.message || 'Authentication failed',
           });
         }
       },
 
       refreshToken: async () => {
         try {
+          set({ isLoading: true, error: null });
           const response = await authService.refreshToken();
           set({
             accessToken: response.data.accessToken,
             user: response.data.user,
             isAuthenticated: true,
+            isLoading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Token refresh failed:', error);
           set({
             user: null,
             accessToken: null,
             isAuthenticated: false,
-            error: 'Token refresh failed',
+            isLoading: false,
+            error: error.message || 'Token refresh failed',
           });
         }
       },

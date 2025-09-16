@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Custom Dialog Width Override */
+.full-width-dialog [data-slot="dialog-content"] {
+  max-width: none !important;
+  width: 98vw !important;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

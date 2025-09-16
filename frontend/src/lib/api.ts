@@ -22,9 +22,10 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount = 0
   ): Promise<T> {
-    const { accessToken } = useAuthStore.getState();
+    const { accessToken, refreshToken } = useAuthStore.getState();
     
     const url = `${this.baseURL}${endpoint}`;
     
@@ -40,6 +41,20 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
+      
+      // If token is expired and we haven't retried yet, try to refresh
+      if (response.status === 401 && retryCount === 0) {
+        try {
+          await refreshToken();
+          // Retry the request with the new token
+          return this.request<T>(endpoint, options, retryCount + 1);
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          // If refresh fails, redirect to login
+          useAuthStore.getState().logout();
+          throw new ApiError('Authentication expired. Please login again.', 401);
+        }
+      }
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

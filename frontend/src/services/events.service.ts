@@ -135,4 +135,24 @@ export const eventsService = {
   async deleteEventByOrganizer(id: string): Promise<{ success: boolean; message: string }> {
     return apiClient.delete<{ success: boolean; message: string }>(`/api/events/${id}/organizer`);
   },
+
+  // Admin: Approve event
+  async approveEvent(id: string): Promise<{ success: boolean; message: string; data: { event: Event } }> {
+    return apiClient.patch<{ success: boolean; message: string; data: { event: Event } }>(`/api/admin/events/${id}/approve`);
+  },
+
+  // Admin: Reject event
+  async rejectEvent(id: string, reason: string): Promise<{ success: boolean; message: string; data: { event: Event } }> {
+    return apiClient.patch<{ success: boolean; message: string; data: { event: Event } }>(`/api/admin/events/${id}/reject`, { reason });
+  },
+
+  // Admin: Get all events (with admin filters)
+  async getAdminEvents(filters: EventFilters = {}): Promise<EventsResponse> {
+    return apiClient.get<EventsResponse>('/api/admin/events', filters);
+  },
+
+  // Admin: Get pending events
+  async getPendingEvents(filters: Partial<EventFilters> = {}): Promise<EventsResponse> {
+    return apiClient.get<EventsResponse>('/api/admin/events/pending', filters);
+  },
 };

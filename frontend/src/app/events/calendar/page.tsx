@@ -16,7 +16,9 @@ import {
   ChevronRight, 
   Clock, 
   MapPin, 
-  Users 
+  Users,
+  Star,
+  MoreHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -87,6 +89,36 @@ export default function CalendarPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date < today;
+  };
+
+  const formatEventTime = (startDate: string) => {
+    const date = new Date(startDate);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getEventStatusColor = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'draft':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  };
+
+  const getEventUrl = (event: any) => {
+    const slug = event.slug || generateSlug(event.title);
+    return `/events/${slug}`;
   };
 
   if (eventsLoading) {
@@ -174,10 +206,10 @@ export default function CalendarPage() {
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-2">
             {/* Day Headers */}
             {dayNames.map((day) => (
-              <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+              <div key={day} className="p-3 text-center text-sm font-semibold text-muted-foreground bg-muted/30 rounded-lg">
                 {day}
               </div>
             ))}
@@ -195,35 +227,68 @@ export default function CalendarPage() {
               return (
                 <div
                   key={date.toISOString()}
-                  className={`p-2 min-h-[100px] border rounded-lg ${
+                  className={`p-2 min-h-[120px] border rounded-lg transition-all duration-200 ${
                     isCurrentDay 
-                      ? 'bg-primary/10 border-primary' 
+                      ? 'bg-primary/10 border-primary shadow-sm' 
                       : isPast 
-                        ? 'bg-muted/50' 
-                        : 'hover:bg-muted/50'
+                        ? 'bg-muted/30 border-muted' 
+                        : 'hover:bg-muted/30 hover:shadow-sm'
                   }`}
                 >
-                  <div className={`text-sm font-medium mb-1 ${
+                  <div className={`text-sm font-semibold mb-2 ${
                     isCurrentDay ? 'text-primary' : isPast ? 'text-muted-foreground' : 'text-foreground'
                   }`}>
                     {date.getDate()}
                   </div>
                   
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map((event) => (
+                  <div className="space-y-1.5">
+                    {dayEvents.slice(0, 3).map((event) => (
                       <Link
                         key={event._id}
-                        href={`/events/${event.slug || event._id}`}
-                        className="block"
+                        href={getEventUrl(event)}
+                        className="block group"
                       >
-                        <div className="text-xs p-1 bg-primary/20 text-primary rounded truncate hover:bg-primary/30 transition-colors">
-                          {event.title}
+                        <div className={`text-xs p-2 rounded-md border transition-all duration-200 group-hover:shadow-sm group-hover:scale-[1.02] ${
+                          event.category?.color 
+                            ? `border-[${event.category.color}20] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
+                            : 'border-blue-200 bg-blue-50 group-hover:bg-blue-100'
+                        }`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {formatEventTime(event.startDate)}
+                              </span>
+                            </div>
+                            <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getEventStatusColor(event.status)}`}>
+                              {event.status}
+                            </div>
+                          </div>
+                          <div className="font-medium text-foreground truncate mb-1">
+                            {event.title}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                              {event.category && (
+                                <div 
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: event.category.color || '#6b7280' }}
+                                />
+                              )}
+                              <span className="text-xs text-muted-foreground truncate">
+                                {event.category?.name || 'Event'}
+                              </span>
+                            </div>
+                            <div className="text-xs font-semibold text-primary">
+                              {event.price === 0 ? 'Free' : `$${event.price}`}
+                            </div>
+                          </div>
                         </div>
                       </Link>
                     ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayEvents.length - 2} more
+                    {dayEvents.length > 3 && (
+                      <div className="text-xs text-muted-foreground text-center py-1 px-2 bg-muted/50 rounded">
+                        +{dayEvents.length - 3} more events
                       </div>
                     )}
                   </div>
@@ -279,7 +344,7 @@ export default function CalendarPage() {
                       </div>
                     </div>
                     <div className="mt-4">
-                      <Link href={`/events/${event.slug || event._id}`}>
+                      <Link href={getEventUrl(event)}>
                         <Button className="w-full" size="sm">
                           View Details
                         </Button>

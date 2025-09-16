@@ -145,3 +145,58 @@ export const useUnpublishEvent = () => {
     },
   });
 };
+
+// Admin hooks
+export const useAdminEvents = (filters: EventFilters = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'events', filters],
+    queryFn: () => eventsService.getAdminEvents(filters),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+export const usePendingEvents = (filters: Partial<EventFilters> = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'events', 'pending', filters],
+    queryFn: () => eventsService.getPendingEvents(filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useApproveEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: eventsService.approveEvent,
+    onSuccess: (data, eventId) => {
+      // Update the specific event in cache
+      queryClient.setQueryData(['events', 'detail', eventId], data);
+      
+      // Invalidate admin events lists
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+    },
+  });
+};
+
+export const useRejectEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => eventsService.rejectEvent(id, reason),
+    onSuccess: (data, variables) => {
+      // Update the specific event in cache
+      queryClient.setQueryData(['events', 'detail', variables.id], data);
+      
+      // Invalidate admin events lists
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+    },
+  });
+};

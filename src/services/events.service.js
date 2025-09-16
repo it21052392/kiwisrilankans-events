@@ -338,7 +338,9 @@ class EventService {
 
     const events = await Event.find(query)
       .populate('category', 'name color icon')
-      .select('title startDate endDate location category images price currency')
+      .select(
+        '_id title slug startDate endDate location category images price currency status'
+      )
       .sort({ startDate: 1 });
 
     // Group events by date for calendar view

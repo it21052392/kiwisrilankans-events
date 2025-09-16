@@ -13,9 +13,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Calendar, 
   Search, 
-  Filter, 
   Edit, 
-  Trash2, 
   Eye,
   CheckCircle,
   XCircle,
@@ -24,13 +22,12 @@ import {
   Users,
   DollarSign,
   Clock,
-  MoreHorizontal,
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEvents } from '@/hooks/queries/useEvents';
+import { useAdminEvents, useApproveEvent, useRejectEvent } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
-import { eventsService } from '@/services/events.service';
+import { EventDetailsModal } from '@/components/events/EventDetailsModal';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -40,12 +37,13 @@ export default function AdminEventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Fetch all events for admin
-  const { data: eventsData, isLoading: eventsLoading, refetch } = useEvents({
+  const { data: eventsData, isLoading: eventsLoading, refetch } = useAdminEvents({
     search: searchTerm || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
+    status: statusFilter !== 'all' && statusFilter !== 'needs_approval' ? statusFilter : undefined,
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
     sortBy: 'createdAt',
     sortOrder: 'desc',
@@ -55,39 +53,42 @@ export default function AdminEventsPage() {
   // Fetch categories for filter
   const { data: categoriesData } = useCategories();
 
+  // Mutations
+  const approveEventMutation = useApproveEvent();
+  const rejectEventMutation = useRejectEvent();
+
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
   }, [isAuthenticated, user, router]);
 
-  const events = eventsData?.data?.events || [];
+  const allEvents = eventsData?.data?.events || [];
   const categories = categoriesData?.data?.categories || [];
 
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      return;
+  // Filter events based on status filter
+  const events = allEvents.filter(event => {
+    if (statusFilter === 'needs_approval') {
+      return event.status === 'draft' || event.status === 'pending_approval';
     }
+    return true; // For other filters, the API handles it
+  });
 
-    setIsDeleting(eventId);
-    try {
-      await eventsService.deleteEvent(eventId);
-      toast.success('Event deleted successfully');
-      refetch();
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Failed to delete event. Please try again.');
-    } finally {
-      setIsDeleting(null);
-    }
+  const handleViewDetails = (event: any) => {
+    setSelectedEvent(event);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedEvent(null);
+    setIsDetailsModalOpen(false);
   };
 
   const handleApproveEvent = async (eventId: string) => {
     try {
-      // This would need to be implemented in the events service
-      // await eventsService.approveEvent(eventId);
+      await approveEventMutation.mutateAsync(eventId);
       toast.success('Event approved successfully');
-      refetch();
+      handleCloseDetails();
     } catch (error) {
       console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
@@ -99,10 +100,9 @@ export default function AdminEventsPage() {
     if (!reason) return;
 
     try {
-      // This would need to be implemented in the events service
-      // await eventsService.rejectEvent(eventId, reason);
+      await rejectEventMutation.mutateAsync({ id: eventId, reason });
       toast.success('Event rejected successfully');
-      refetch();
+      handleCloseDetails();
     } catch (error) {
       console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');
@@ -180,6 +180,7 @@ export default function AdminEventsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="needs_approval">Needs Approval</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="pending_approval">Pending Approval</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
@@ -253,49 +254,55 @@ export default function AdminEventsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <Link href={`/events/${event.slug}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewDetails(event)}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Link href={`/admin/events/${event._id}/edit`}>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" title="Edit Event">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
-                      {event.status === 'pending_approval' && (
+                      {(event.status === 'pending_approval' || event.status === 'draft') && (
                         <>
                           <Button
                             size="sm"
                             onClick={() => handleApproveEvent(event._id)}
+                            disabled={approveEventMutation.isPending}
                             className="bg-green-600 hover:bg-green-700"
+                            title="Approve Event"
                           >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
+                            {approveEventMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </>
+                            )}
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => handleRejectEvent(event._id)}
+                            disabled={rejectEventMutation.isPending}
+                            title="Reject Event"
                           >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
+                            {rejectEventMutation.isPending ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Reject
+                              </>
+                            )}
                           </Button>
                         </>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteEvent(event._id)}
-                        disabled={isDeleting === event._id}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        {isDeleting === event._id ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -340,38 +347,44 @@ export default function AdminEventsPage() {
         )}
 
         {/* Stats Summary */}
-        {events.length > 0 && (
+        {allEvents.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Event Statistics</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{events.length}</div>
+                  <div className="text-2xl font-bold text-primary">{allEvents.length}</div>
                   <div className="text-sm text-muted-foreground">Total Events</div>
                 </div>
                 <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {allEvents.filter(e => e.status === 'draft' || e.status === 'pending_approval').length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Need Approval</div>
+                </div>
+                <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {events.filter(e => e.status === 'published').length}
+                    {allEvents.filter(e => e.status === 'published').length}
                   </div>
                   <div className="text-sm text-muted-foreground">Published</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {events.filter(e => e.status === 'pending_approval').length}
+                    {allEvents.filter(e => e.status === 'pending_approval').length}
                   </div>
                   <div className="text-sm text-muted-foreground">Pending</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {events.filter(e => e.status === 'draft').length}
+                    {allEvents.filter(e => e.status === 'draft').length}
                   </div>
                   <div className="text-sm text-muted-foreground">Drafts</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">
-                    {events.filter(e => e.status === 'rejected' || e.status === 'cancelled').length}
+                    {allEvents.filter(e => e.status === 'rejected' || e.status === 'cancelled').length}
                   </div>
                   <div className="text-sm text-muted-foreground">Rejected/Cancelled</div>
                 </div>
@@ -379,6 +392,17 @@ export default function AdminEventsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Event Details Modal */}
+        <EventDetailsModal
+          event={selectedEvent}
+          isOpen={isDetailsModalOpen}
+          onClose={handleCloseDetails}
+          onApprove={handleApproveEvent}
+          onReject={handleRejectEvent}
+          isApproving={approveEventMutation.isPending}
+          isRejecting={rejectEventMutation.isPending}
+        />
       </div>
     </AdminLayout>
   );
