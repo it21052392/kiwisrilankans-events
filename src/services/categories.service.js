@@ -100,16 +100,6 @@ class CategoryService {
     return await Category.findActive();
   }
 
-  async getCategoryBySlug(slug) {
-    const category = await Category.findBySlug(slug);
-
-    if (!category) {
-      throw new Error('Category not found');
-    }
-
-    return category;
-  }
-
   async updateCategoryEventCount(categoryId) {
     const category = await Category.findById(categoryId);
 

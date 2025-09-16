@@ -46,6 +46,7 @@ const createPencilHold = asyncHandler(async (req, res) => {
   const pencilHold = await pencilHoldService.createPencilHold({
     ...pencilHoldData,
     userId,
+    createdBy: userId,
   });
 
   logger.info(

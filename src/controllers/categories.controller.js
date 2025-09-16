@@ -8,11 +8,14 @@ import { logger } from '../config/logger.js';
 const getCategories = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, search, active } = req.query;
 
+  // Default to showing active categories if no active parameter is provided
+  const activeFilter = active !== undefined ? active === 'true' : true;
+
   const categories = await categoryService.getCategories({
     page: parseInt(page),
     limit: parseInt(limit),
     search,
-    active: active === 'true',
+    active: activeFilter,
   });
 
   res.json({
@@ -39,7 +42,10 @@ const getCategoryById = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private/Admin
 const createCategory = asyncHandler(async (req, res) => {
-  const categoryData = req.body;
+  const categoryData = {
+    ...req.body,
+    createdBy: req.user.id,
+  };
 
   const category = await categoryService.createCategory(categoryData);
 

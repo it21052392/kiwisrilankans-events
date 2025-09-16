@@ -14,13 +14,6 @@ const categorySchema = new mongoose.Schema(
       trim: true,
       maxlength: [200, 'Description cannot exceed 200 characters'],
     },
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
     color: {
       type: String,
       default: '#3B82F6',
@@ -57,7 +50,6 @@ const categorySchema = new mongoose.Schema(
 
 // Indexes
 categorySchema.index({ name: 1 });
-categorySchema.index({ slug: 1 });
 categorySchema.index({ active: 1 });
 categorySchema.index({ sortOrder: 1 });
 
@@ -66,17 +58,6 @@ categorySchema.virtual('events', {
   ref: 'Event',
   localField: '_id',
   foreignField: 'category',
-});
-
-// Pre-save middleware to generate slug
-categorySchema.pre('save', function (next) {
-  if (this.isModified('name')) {
-    this.slug = this.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-  }
-  next();
 });
 
 // Pre-save middleware to update event count
@@ -103,11 +84,6 @@ categorySchema.post('save', async function () {
 // Static method to find active categories
 categorySchema.statics.findActive = function () {
   return this.find({ active: true }).sort({ sortOrder: 1, name: 1 });
-};
-
-// Static method to find by slug
-categorySchema.statics.findBySlug = function (slug) {
-  return this.findOne({ slug, active: true });
 };
 
 // Instance method to update event count

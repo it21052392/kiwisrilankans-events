@@ -52,7 +52,7 @@ class PencilHoldService {
   }
 
   async createPencilHold(pencilHoldData) {
-    const { eventId, userId, ...otherData } = pencilHoldData;
+    const { eventId, userId, createdBy, ...otherData } = pencilHoldData;
 
     // Check if event exists and is available
     const event = await Event.findById(eventId);
@@ -84,6 +84,7 @@ class PencilHoldService {
     const pencilHold = await PencilHold.create({
       event: eventId,
       user: userId,
+      createdBy: createdBy || userId, // Use provided createdBy or default to userId
       ...otherData,
     });
 
