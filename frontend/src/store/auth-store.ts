@@ -9,6 +9,17 @@ export interface User {
   role: 'organizer' | 'admin';
   avatar?: string;
   createdAt: string;
+  preferences?: {
+    notifications: {
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+    };
+    privacy: {
+      profileVisibility: 'public' | 'private' | 'friends';
+      showEmail: boolean;
+    };
+  };
 }
 
 interface AuthState {

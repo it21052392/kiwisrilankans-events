@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { EventCard } from '@/components/events/EventCard';
+import { CalendarWidget } from '@/components/calendar/CalendarWidget';
 import { useEvents } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { useCommunityStats } from '@/hooks/queries/useCommunityStats';
@@ -48,7 +49,7 @@ export default function Home() {
     sortBy: 'startDate', 
     sortOrder: 'asc',
     hidePast: true 
-  });
+  } as any);
   
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useCategories({ 
@@ -186,6 +187,18 @@ export default function Home() {
               </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* Calendar Widget */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <CalendarWidget 
+            showTitle={true}
+            showNavigation={true}
+            maxEvents={4}
+            className="max-w-6xl mx-auto"
+          />
         </div>
       </section>
 

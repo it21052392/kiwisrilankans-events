@@ -24,7 +24,7 @@ export function useAuthRedirect() {
       if (pathname === '/auth/login') return;
 
       // Public routes that don't require authentication
-      const publicRoutes = ['/auth/login', '/auth/callback', '/', '/events', '/categories'];
+      const publicRoutes = ['/auth/login', '/auth/callback', '/', '/events', '/categories', '/events/calendar'];
       const isPublicRoute = publicRoutes.some(route => {
         if (route.includes('[') && route.includes(']')) {
           // Handle dynamic routes

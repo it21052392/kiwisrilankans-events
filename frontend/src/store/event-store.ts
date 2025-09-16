@@ -93,6 +93,8 @@ export interface EventFilters {
   sortBy?: 'startDate' | 'endDate' | 'title' | 'createdAt' | 'price' | 'capacity';
   sortOrder?: 'asc' | 'desc';
   hidePast?: boolean;
+  page?: number;
+  limit?: number;
 }
 
 interface EventState {

@@ -27,6 +27,7 @@ import {
   Plus
 } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -117,8 +118,9 @@ export default function CalendarPage() {
       const eventStartHour = eventStart.getHours();
       const eventEndHour = eventEnd.getHours();
       
-      // Check if event overlaps with this time slot
-      return eventStartHour <= hour && eventEndHour >= hour;
+      // Check if event overlaps with this time slot (hour to hour+1)
+      // Event starts before or during this hour AND ends after this hour starts
+      return eventStartHour <= hour && eventEndHour > hour;
     });
   };
 
@@ -655,7 +657,7 @@ export default function CalendarPage() {
                             >
                               <div className="font-medium text-sm truncate">{event.title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {formatEventTime(event.startDate)}
+                                {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
                               </div>
                               {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
                                 <div className={`font-medium text-xs ${
@@ -711,61 +713,77 @@ export default function CalendarPage() {
 
                       {/* Time Slots */}
                       <div className="relative">
+                        {/* Time slot grid lines */}
                         {timeSlots.map((slot) => (
-                          <div key={slot.hour} className="h-12 border-b border-gray-100 relative">
-                            {/* Events for this time slot */}
-                            {getEventsForDayAndTime(date, slot.hour).map((event, eventIndex) => {
-                              const position = getEventPosition(event, slot.hour);
-                              
-                              return (
-                                <Link
-                                  key={event._id}
-                                  href={getEventUrl(event)}
-                                  className="absolute group cursor-pointer"
-                                  style={{
-                                    top: position.top,
-                                    height: position.height,
-                                    left: '2px',
-                                    right: '2px',
-                                    zIndex: 10 + eventIndex
-                                  }}
-                                >
-                                  <div className={`h-full rounded-sm border-l-2 p-1 text-xs transition-all duration-200 group-hover:shadow-md ${
-                                    event.status === 'pencil_hold'
-                                      ? 'border-l-orange-500 bg-orange-50 group-hover:bg-orange-100'
-                                      : event.status === 'pencil_hold_confirmed'
-                                        ? 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
-                                        : event.status === 'published'
-                                          ? 'border-l-green-500 bg-green-50 group-hover:bg-green-100'
-                                          : event.status === 'draft'
-                                            ? 'border-l-yellow-500 bg-yellow-50 group-hover:bg-yellow-100'
-                                            : event.status === 'cancelled'
-                                              ? 'border-l-red-500 bg-red-50 group-hover:bg-red-100'
-                                              : event.category?.color 
-                                                ? `border-l-[${event.category.color}] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
-                                                : 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
-                                  }`}>
-                                    <div className="font-medium text-foreground truncate">
-                                      <span className="hidden sm:inline">{event.title}</span>
-                                      <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
-                                    </div>
-                                    <div className="text-muted-foreground truncate hidden sm:block">
-                                      {formatEventTime(event.startDate)}
-                                    </div>
-                                    {/* Status Indicator */}
-                                    {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
-                                      <div className={`font-medium text-xs truncate ${
-                                        event.status === 'pencil_hold' ? 'text-orange-600' : 'text-blue-600'
-                                      }`}>
-                                        {getEventStatusDisplay(event.status)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
+                          <div key={slot.hour} className="h-12 border-b border-gray-100"></div>
                         ))}
+                        
+                        {/* Events container - positioned absolutely over the grid */}
+                        <div className="absolute inset-0 pointer-events-none">
+                          {getEventsForDate(date).map((event, eventIndex) => {
+                            const eventStart = new Date(event.startDate);
+                            const eventEnd = new Date(event.endDate);
+                            const eventStartHour = eventStart.getHours();
+                            const eventStartMinute = eventStart.getMinutes();
+                            const eventEndHour = eventEnd.getHours();
+                            const eventEndMinute = eventEnd.getMinutes();
+                            
+                            const startTimeInHours = eventStartHour + (eventStartMinute / 60);
+                            const endTimeInHours = eventEndHour + (eventEndMinute / 60);
+                            const durationInHours = endTimeInHours - startTimeInHours;
+                            
+                            // Calculate position from the top of the day (not relative to a specific hour)
+                            const top = (startTimeInHours - 1) * 48 + 'px'; // 48px per hour, starting from 1 AM
+                            const height = durationInHours * 48 + 'px';
+                            
+                            return (
+                              <Link
+                                key={event._id}
+                                href={getEventUrl(event)}
+                                className="absolute group cursor-pointer pointer-events-auto"
+                                style={{
+                                  top: top,
+                                  height: height,
+                                  left: '2px',
+                                  right: '2px',
+                                  zIndex: 10 + eventIndex
+                                }}
+                              >
+                                <div className={`h-full rounded-sm border-l-2 p-1 text-xs transition-all duration-200 group-hover:shadow-md ${
+                                  event.status === 'pencil_hold'
+                                    ? 'border-l-orange-500 bg-orange-50 group-hover:bg-orange-100'
+                                    : event.status === 'pencil_hold_confirmed'
+                                      ? 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
+                                      : event.status === 'published'
+                                        ? 'border-l-green-500 bg-green-50 group-hover:bg-green-100'
+                                        : event.status === 'draft'
+                                          ? 'border-l-yellow-500 bg-yellow-50 group-hover:bg-yellow-100'
+                                          : event.status === 'cancelled'
+                                            ? 'border-l-red-500 bg-red-50 group-hover:bg-red-100'
+                                            : event.category?.color 
+                                              ? `border-l-[${event.category.color}] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
+                                              : 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
+                                }`}>
+                                  <div className="font-medium text-foreground truncate">
+                                    <span className="hidden sm:inline">{event.title}</span>
+                                    <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
+                                  </div>
+                                  <div className="text-muted-foreground truncate hidden sm:block">
+                                    {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                  </div>
+                                  {/* Status Indicator */}
+                                  {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
+                                    <div className={`font-medium text-xs truncate ${
+                                      event.status === 'pencil_hold' ? 'text-orange-600' : 'text-blue-600'
+                                    }`}>
+                                      {getEventStatusDisplay(event.status)}
+                                    </div>
+                                  )}
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   );
@@ -837,7 +855,7 @@ export default function CalendarPage() {
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 text-muted-foreground" />
                                   <span className="text-xs font-medium text-muted-foreground">
-                                    {formatEventTime(event.startDate)}
+                                    {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
                                   </span>
                                 </div>
                                 <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getEventStatusColor(event.status)}`}>
