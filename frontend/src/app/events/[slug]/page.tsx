@@ -290,13 +290,9 @@ export default function EventDetailPage() {
                 <CardTitle>Event Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isPastEvent ? (
+                {isPastEvent && (
                   <Button disabled className="w-full">
                     Event Has Ended
-                  </Button>
-                ) : (
-                  <Button className="w-full" size="lg">
-                    Register for Event
                   </Button>
                 )}
                 

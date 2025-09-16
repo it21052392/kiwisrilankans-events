@@ -208,7 +208,7 @@ export default function OrganizerDashboard() {
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {event.location}
+                            {event.location?.name || 'No location'}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mt-2">

@@ -312,7 +312,7 @@ eventSchema.statics.findUpcoming = function () {
 
 // Static method to find by slug
 eventSchema.statics.findBySlug = function (slug) {
-  return this.findOne({ slug, status: 'published', isDeleted: false });
+  return this.findOne({ slug, isDeleted: false });
 };
 
 // Static method to find events by category

@@ -15,11 +15,23 @@ class EventService {
     sortOrder = 'asc',
     view = 'list', // list, grid, calendar
     hidePast = true,
+    organizerId,
   }) {
-    const query = { status: 'published', isDeleted: false };
+    console.log('getEvents called with organizerId:', organizerId);
+    const query = { isDeleted: false };
 
-    // Hide past events by default
-    if (hidePast) {
+    // If organizerId is provided, show all events by that organizer regardless of status
+    // Otherwise, only show published events
+    if (organizerId) {
+      query.createdBy = organizerId;
+      console.log('Filtering by organizerId:', organizerId);
+    } else {
+      query.status = 'published';
+      console.log('Filtering by published status only');
+    }
+
+    // Hide past events by default (only for public view, not for organizer view)
+    if (hidePast && !organizerId) {
       query.endDate = { $gte: new Date() };
     }
 
@@ -52,6 +64,8 @@ class EventService {
     const sort = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+    console.log('Final query:', JSON.stringify(query, null, 2));
+
     const events = await Event.find(query)
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
@@ -60,6 +74,8 @@ class EventService {
       .limit(limit);
 
     const total = await Event.countDocuments(query);
+
+    console.log('Found events:', events.length, 'Total:', total);
 
     return {
       events,
@@ -87,9 +103,16 @@ class EventService {
   }
 
   async getEventBySlug(slug) {
+    console.log('Looking for event with slug:', slug);
+
     const event = await Event.findBySlug(slug)
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email');
+
+    console.log('Found event:', event ? 'Yes' : 'No');
+    if (event) {
+      console.log('Event status:', event.status);
+    }
 
     if (!event) {
       throw new Error('Event not found');

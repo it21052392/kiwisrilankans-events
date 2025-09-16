@@ -58,7 +58,10 @@ export const eventSchemas = {
       images: z
         .array(
           z.object({
-            url: z.string().url('Invalid image URL'),
+            url: z.string().refine(val => {
+              // Allow blob URLs or valid HTTP/HTTPS URLs
+              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')
@@ -178,7 +181,10 @@ export const eventSchemas = {
       images: z
         .array(
           z.object({
-            url: z.string().url('Invalid image URL'),
+            url: z.string().refine(val => {
+              // Allow blob URLs or valid HTTP/HTTPS URLs
+              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')
@@ -350,7 +356,10 @@ export const eventSchemas = {
       images: z
         .array(
           z.object({
-            url: z.string().url('Invalid image URL'),
+            url: z.string().refine(val => {
+              // Allow blob URLs or valid HTTP/HTTPS URLs
+              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')

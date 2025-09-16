@@ -18,6 +18,7 @@ const getEvents = asyncHandler(async (req, res) => {
     sortOrder = 'asc',
     view = 'list',
     hidePast = true,
+    organizerId,
   } = req.query;
 
   const events = await eventService.getEvents({
@@ -32,6 +33,7 @@ const getEvents = asyncHandler(async (req, res) => {
     sortOrder,
     view,
     hidePast: hidePast === 'true',
+    organizerId,
   });
 
   res.json({

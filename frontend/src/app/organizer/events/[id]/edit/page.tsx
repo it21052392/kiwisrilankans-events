@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { OrganizerLayout } from '@/components/layout/OrganizerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,20 +29,28 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
-import { eventsService, CreateEventData } from '@/services/events.service';
+import { useEvent, useUpdateEventByOrganizer } from '@/hooks/queries/useEvents';
 import toast from 'react-hot-toast';
 
-export default function CreateEventPage() {
+export default function EditEventPage() {
   const router = useRouter();
+  const params = useParams();
+  const eventId = params.id as string;
   const { user, isAuthenticated } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  
+  // Fetch event data
+  const { data: eventData, isLoading: eventLoading, error: eventError } = useEvent(eventId);
+  
+  // Update event mutation
+  const updateEventMutation = useUpdateEventByOrganizer();
 
   // Form state
-  const [formData, setFormData] = useState<CreateEventData>({
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
@@ -83,6 +91,42 @@ export default function CreateEventPage() {
       router.push('/auth/login');
     }
   }, [isAuthenticated, user, router]);
+
+  // Load event data when available
+  useEffect(() => {
+    if (eventData?.data?.event) {
+      const event = eventData.data.event;
+      setFormData({
+        title: event.title || '',
+        description: event.description || '',
+        category: event.category?._id || '',
+        startDate: event.startDate ? new Date(event.startDate).toISOString().slice(0, 16) : '',
+        endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
+        registrationDeadline: event.registrationDeadline ? new Date(event.registrationDeadline).toISOString().slice(0, 16) : '',
+        location: {
+          name: event.location?.name || '',
+          address: event.location?.address || '',
+          city: event.location?.city || '',
+          coordinates: {
+            latitude: event.location?.coordinates?.latitude || 0,
+            longitude: event.location?.coordinates?.longitude || 0
+          }
+        },
+        capacity: event.capacity || 50,
+        price: event.price || 0,
+        currency: event.currency || 'NZD',
+        images: event.images || [],
+        tags: event.tags || [],
+        requirements: event.requirements || [],
+        contactInfo: {
+          name: event.contactInfo?.name || user?.name || '',
+          email: event.contactInfo?.email || user?.email || '',
+          phone: event.contactInfo?.phone || ''
+        }
+      });
+      setIsLoading(false);
+    }
+  }, [eventData, user]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -289,27 +333,40 @@ export default function CreateEventPage() {
         registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
       };
 
-      const response = await eventsService.createEvent(eventData);
+      await updateEventMutation.mutateAsync({
+        id: eventId,
+        data: eventData
+      });
       
-      if (response.success) {
-        toast.success('Event created successfully!');
-        router.push('/organizer/events');
-      } else {
-        throw new Error('Failed to create event');
-      }
+      toast.success('Event updated successfully!');
+      router.push('/organizer/events');
     } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error('Failed to create event. Please try again.');
+      console.error('Error updating event:', error);
+      toast.error('Failed to update event. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || eventLoading) {
     return (
       <OrganizerLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <LoadingSpinner size="lg" />
+        </div>
+      </OrganizerLayout>
+    );
+  }
+
+  if (eventError || !eventData?.data?.event) {
+    return (
+      <OrganizerLayout>
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h1>
+          <p className="text-muted-foreground mb-6">The event you're trying to edit doesn't exist or has been removed.</p>
+          <Button onClick={() => router.push('/organizer/events')}>
+            Back to Events
+          </Button>
         </div>
       </OrganizerLayout>
     );
@@ -327,9 +384,9 @@ export default function CreateEventPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Create New Event</h1>
+            <h1 className="text-3xl font-bold text-foreground">Edit Event</h1>
             <p className="text-muted-foreground mt-1">
-              Fill in the details below to create your event
+              Update your event details
             </p>
           </div>
         </div>
@@ -408,7 +465,7 @@ export default function CreateEventPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!imagePreview ? (
+              {!imagePreview && formData.images.length === 0 ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
                   <input
                     type="file"
@@ -437,7 +494,7 @@ export default function CreateEventPage() {
                 <div className="space-y-4">
                   <div className="relative">
                     <img
-                      src={imagePreview}
+                      src={imagePreview || formData.images[0]?.url}
                       alt="Event preview"
                       className="w-full h-48 object-cover rounded-lg"
                     />
@@ -450,7 +507,7 @@ export default function CreateEventPage() {
                     </button>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Selected:</span> {selectedImage?.name}
+                    <span className="font-medium">Selected:</span> {selectedImage?.name || 'Current image'}
                   </div>
                 </div>
               )}
@@ -760,8 +817,8 @@ export default function CreateEventPage() {
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
-              <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Creating...' : 'Create Event'}
+              <Save className="h-4 w-4 mr-2" />
+              {isSubmitting ? 'Updating...' : 'Update Event'}
             </Button>
           </div>
         </form>
