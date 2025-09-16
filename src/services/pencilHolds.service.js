@@ -60,8 +60,17 @@ class PencilHoldService {
       throw new Error('Event not found');
     }
 
-    if (event.status !== 'published') {
+    // Allow pencil holds for draft events (new logic)
+    if (!['draft', 'published'].includes(event.status)) {
       throw new Error('Event is not available for pencil holds');
+    }
+
+    // Check if event already has a pencil hold
+    if (
+      event.status === 'pencil_hold' ||
+      event.status === 'pencil_hold_confirmed'
+    ) {
+      throw new Error('Event already has a pencil hold');
     }
 
     if (event.registrationCount >= event.capacity) {
@@ -87,6 +96,16 @@ class PencilHoldService {
       createdBy: createdBy || userId, // Use provided createdBy or default to userId
       ...otherData,
     });
+
+    // Update event status to pencil_hold
+    event.status = 'pencil_hold';
+    event.pencilHoldInfo = {
+      pencilHoldId: pencilHold._id,
+      expiresAt: pencilHold.expiresAt,
+      notes: pencilHold.notes,
+      priority: pencilHold.priority,
+    };
+    await event.save();
 
     return await this.getPencilHoldById(pencilHold._id);
   }
@@ -242,6 +261,12 @@ class PencilHoldService {
     }
 
     await pencilHold.confirm();
+
+    // Update event status to pencil_hold_confirmed
+    event.status = 'pencil_hold_confirmed';
+    event.pencilHoldInfo.priority = pencilHold.priority;
+    await event.save();
+
     return await this.getPencilHoldById(id);
   }
 
@@ -308,6 +333,8 @@ class PencilHoldService {
     event.status = 'published';
     event.approvedBy = pencilHold.user; // The organizer who created it
     event.approvedAt = new Date();
+    // Clear pencil hold info since event is now published
+    event.pencilHoldInfo = undefined;
     await event.save();
 
     // Mark pencil hold as converted
@@ -342,6 +369,27 @@ class PencilHoldService {
       cancelled,
       expired,
     };
+  }
+
+  async handleExpiredPencilHolds() {
+    // Find expired pencil holds
+    const expiredHolds = await PencilHold.findExpired();
+
+    for (const hold of expiredHolds) {
+      // Update pencil hold status
+      hold.status = 'expired';
+      await hold.save();
+
+      // Update event status back to draft
+      const event = await Event.findById(hold.event);
+      if (event && event.status === 'pencil_hold') {
+        event.status = 'draft';
+        event.pencilHoldInfo = undefined;
+        await event.save();
+      }
+    }
+
+    return expiredHolds.length;
   }
 }
 

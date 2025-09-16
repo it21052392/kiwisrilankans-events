@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { useEvents } from '@/hooks/queries/useEvents';
 import { useUsers } from '@/hooks/queries/useUsers';
 import { useCategories } from '@/hooks/queries/useCategories';
+import { useEventsWithPencilHolds } from '@/hooks/queries/usePencilHolds';
 import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
@@ -49,6 +50,12 @@ export default function AdminDashboard() {
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  
+  // Fetch events with pencil holds
+  const { data: pencilHoldEventsData, isLoading: pencilHoldEventsLoading } = useEventsWithPencilHolds({
+    limit: 5,
+    status: 'pencil_hold'
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -83,6 +90,7 @@ export default function AdminDashboard() {
   const events = eventsData?.data?.events || [];
   const users = usersData?.data?.users || [];
   const categories = categoriesData?.data?.categories || [];
+  const pencilHoldEvents = pencilHoldEventsData?.data?.events || [];
   
   // Calculate stats
   const totalEvents = events.length;
@@ -236,6 +244,90 @@ export default function AdminDashboard() {
                           </Button>
                         </Link>
                         <Link href={`/admin/events/${event.id}/edit`}>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pencil Hold Events */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Pencil Hold Events
+                  </CardTitle>
+                  <CardDescription>
+                    Events with active pencil holds waiting for confirmation
+                  </CardDescription>
+                </div>
+                <Link href="/admin/events?status=pencil_hold">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {pencilHoldEventsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : pencilHoldEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No pencil hold events</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pencilHoldEvents.slice(0, 3).map((event) => (
+                    <div key={event._id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(event.startDate).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {event.location?.name || event.location?.address || 'Location TBD'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline">
+                            Pencil Hold
+                          </Badge>
+                          {event.pencilHoldInfo && (
+                            <Badge variant="secondary" className="text-xs">
+                              Expires: {new Date(event.pencilHoldInfo.expiresAt).toLocaleDateString()}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            by {event.createdBy?.name || 'Unknown'}
+                          </span>
+                        </div>
+                        {event.pencilHoldInfo?.notes && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {event.pencilHoldInfo.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 ml-4">
+                        <Link href={`/admin/events/${event._id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href={`/admin/events/${event._id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>

@@ -14,6 +14,7 @@ import {
   softDeleteEvent,
   restoreEvent,
   unpublishEvent,
+  updateEventPencilHoldStatus,
 } from '../controllers/events.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin, requireAdminOrOrganizer } from '../middlewares/rbac.js';
@@ -88,6 +89,11 @@ router.put(
   validateParams(commonSchemas.mongoId),
   validateBody(eventSchemas.update),
   updateEvent
+);
+router.patch(
+  '/:id/pencil-hold-status',
+  validateParams(commonSchemas.mongoId),
+  updateEventPencilHoldStatus
 );
 router.delete('/:id', validateParams(commonSchemas.mongoId), deleteEvent);
 

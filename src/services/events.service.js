@@ -21,13 +21,15 @@ class EventService {
     const query = { isDeleted: false };
 
     // If organizerId is provided, show all events by that organizer regardless of status
-    // Otherwise, only show published events
+    // Otherwise, show published and pencil hold events
     if (organizerId) {
       query.createdBy = organizerId;
       console.log('Filtering by organizerId:', organizerId);
     } else {
-      query.status = 'published';
-      console.log('Filtering by published status only');
+      query.status = {
+        $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'],
+      };
+      console.log('Filtering by published and pencil hold events');
     }
 
     // Hide past events by default (only for public view, not for organizer view)
@@ -311,7 +313,7 @@ class EventService {
 
   async getEventsForCalendar({ startDate, endDate, category, search }) {
     const query = {
-      status: 'published',
+      status: { $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'] }, // Include pencil hold events
       isDeleted: false,
       endDate: { $gte: new Date() }, // Only future events
     };
@@ -338,8 +340,9 @@ class EventService {
 
     const events = await Event.find(query)
       .populate('category', 'name color icon')
+      .populate('createdBy', 'name email')
       .select(
-        '_id title slug startDate endDate location category images price currency status'
+        '_id title slug startDate endDate location category images price currency status pencilHoldInfo createdBy'
       )
       .sort({ startDate: 1 });
 
@@ -369,7 +372,7 @@ class EventService {
     sortOrder = 'asc',
   }) {
     const query = {
-      status: 'published',
+      status: { $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'] }, // Include pencil hold events
       isDeleted: false,
       endDate: { $gte: new Date() }, // Only future events
     };
@@ -391,8 +394,9 @@ class EventService {
 
     const events = await Event.find(query)
       .populate('category', 'name color icon')
+      .populate('createdBy', 'name email')
       .select(
-        'title description startDate endDate location category images price currency capacity registrationCount featured'
+        'title description startDate endDate location category images price currency capacity registrationCount featured status pencilHoldInfo createdBy'
       )
       .sort(sort)
       .skip((page - 1) * limit)
@@ -462,6 +466,53 @@ class EventService {
       tags: matchingTags,
       total: events.length,
     };
+  }
+
+  async getEventsWithPencilHolds({ page = 1, limit = 10, status }) {
+    const query = {
+      isDeleted: false,
+      status: { $in: ['pencil_hold', 'pencil_hold_confirmed'] },
+    };
+
+    if (status) {
+      query.status = status;
+    }
+
+    const events = await Event.find(query)
+      .populate('category', 'name color icon')
+      .populate('createdBy', 'name email')
+      .populate('pencilHoldInfo.pencilHoldId')
+      .sort({ 'pencilHoldInfo.priority': -1, createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const total = await Event.countDocuments(query);
+
+    return {
+      events,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async updateEventPencilHoldStatus(eventId, status, pencilHoldInfo = null) {
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      throw new Error('Event not found');
+    }
+
+    event.status = status;
+    if (pencilHoldInfo) {
+      event.pencilHoldInfo = pencilHoldInfo;
+    }
+
+    await event.save();
+    return event;
   }
 }
 

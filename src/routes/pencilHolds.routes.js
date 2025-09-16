@@ -9,6 +9,8 @@ import {
   confirmPencilHold,
   approvePencilHold,
   cancelPencilHold,
+  getEventsWithPencilHolds,
+  handleExpiredPencilHolds,
 } from '../controllers/pencilHolds.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin, requireAdminOrOrganizer } from '../middlewares/rbac.js';
@@ -55,6 +57,12 @@ router.patch(
 // Admin only routes
 router.use(requireAdmin);
 
+router.get(
+  '/events',
+  validateQuery(commonSchemas.pagination),
+  getEventsWithPencilHolds
+);
+router.post('/expired', handleExpiredPencilHolds);
 router.patch(
   '/:id/approve',
   validateParams(commonSchemas.mongoId),

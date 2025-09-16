@@ -29,6 +29,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
+import { useCreatePencilHold } from '@/hooks/queries/usePencilHolds';
 import { eventsService, CreateEventData } from '@/services/events.service';
 import toast from 'react-hot-toast';
 
@@ -37,9 +38,14 @@ export default function CreateEventPage() {
   const { user, isAuthenticated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createPencilHold, setCreatePencilHold] = useState(false);
+  const [pencilHoldNotes, setPencilHoldNotes] = useState('');
   
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  
+  // Pencil hold mutation
+  const createPencilHoldMutation = useCreatePencilHold();
 
   // Form state
   const [formData, setFormData] = useState<CreateEventData>({
@@ -292,7 +298,25 @@ export default function CreateEventPage() {
       const response = await eventsService.createEvent(eventData);
       
       if (response.success) {
-        toast.success('Event created successfully!');
+        const eventId = response.data.event._id;
+        
+        // Create pencil hold if requested
+        if (createPencilHold && pencilHoldNotes.trim()) {
+          try {
+            await createPencilHoldMutation.mutateAsync({
+              eventId,
+              notes: pencilHoldNotes,
+              priority: 5,
+            });
+            toast.success('Event created and pencil hold created successfully!');
+          } catch (pencilHoldError) {
+            console.error('Error creating pencil hold:', pencilHoldError);
+            toast.error('Event created but failed to create pencil hold');
+          }
+        } else {
+          toast.success('Event created successfully!');
+        }
+        
         router.push('/organizer/events');
       } else {
         throw new Error('Failed to create event');
@@ -743,6 +767,49 @@ export default function CreateEventPage() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Pencil Hold Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Pencil Hold (Optional)
+              </CardTitle>
+              <CardDescription>
+                Reserve this event slot for 48 hours while you finalize details
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="createPencilHold"
+                  checked={createPencilHold}
+                  onChange={(e) => setCreatePencilHold(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="createPencilHold" className="text-sm font-medium">
+                  Create pencil hold for this event
+                </Label>
+              </div>
+              
+              {createPencilHold && (
+                <div className="space-y-2">
+                  <Label htmlFor="pencilHoldNotes">Pencil Hold Notes</Label>
+                  <Textarea
+                    id="pencilHoldNotes"
+                    value={pencilHoldNotes}
+                    onChange={(e) => setPencilHoldNotes(e.target.value)}
+                    placeholder="Add notes about this pencil hold (e.g., need to confirm speakers, finalize venue details...)"
+                    rows={3}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    This will reserve the event slot for 48 hours. You can confirm or cancel it later.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

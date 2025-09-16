@@ -38,7 +38,7 @@ export interface Event {
     email: string;
     phone: string;
   };
-  status: 'draft' | 'pending_approval' | 'published' | 'rejected' | 'unpublished' | 'cancelled' | 'completed' | 'deleted';
+  status: 'draft' | 'pencil_hold' | 'pencil_hold_confirmed' | 'pending_approval' | 'published' | 'rejected' | 'unpublished' | 'cancelled' | 'completed' | 'deleted';
   featured: boolean;
   createdBy: {
     _id: string;
@@ -71,6 +71,14 @@ export interface Event {
     _id: string;
     name: string;
     email: string;
+  };
+  registrationCount: number;
+  pencilHoldCount: number;
+  pencilHoldInfo?: {
+    pencilHoldId: string;
+    expiresAt: string;
+    notes: string;
+    priority: number;
   };
   createdAt: string;
   updatedAt: string;

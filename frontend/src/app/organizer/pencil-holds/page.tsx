@@ -61,9 +61,9 @@ export default function OrganizerPencilHoldsPage() {
     limit: 50
   });
 
-  // Fetch events for creating pencil holds
+  // Fetch events for creating pencil holds (include draft and published events)
   const { data: eventsData, isLoading: eventsLoading } = useEvents({
-    status: 'published',
+    // Don't filter by status to include both draft and published events
     limit: 100,
     sortBy: 'startDate',
     sortOrder: 'asc'

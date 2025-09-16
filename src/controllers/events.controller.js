@@ -290,6 +290,28 @@ const unpublishEvent = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Update event pencil hold status
+// @route   PATCH /api/events/:id/pencil-hold-status
+// @access  Private/Admin
+const updateEventPencilHoldStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status, pencilHoldInfo } = req.body;
+
+  const event = await eventService.updateEventPencilHoldStatus(
+    id,
+    status,
+    pencilHoldInfo
+  );
+
+  logger.info(`Event pencil hold status updated: ${id} - ${status}`);
+
+  res.json({
+    success: true,
+    message: 'Event pencil hold status updated successfully',
+    data: { event },
+  });
+});
+
 export {
   getEvents,
   getEventById,
@@ -305,4 +327,5 @@ export {
   softDeleteEvent,
   restoreEvent,
   unpublishEvent,
+  updateEventPencilHoldStatus,
 };

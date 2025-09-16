@@ -236,12 +236,33 @@ export default function CalendarPage() {
     switch (status) {
       case 'published':
         return 'bg-green-100 text-green-800 border-green-200';
+      case 'pencil_hold':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'pencil_hold_confirmed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'draft':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getEventStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'Published';
+      case 'pencil_hold':
+        return 'Pencil Hold';
+      case 'pencil_hold_confirmed':
+        return 'Confirmed';
+      case 'draft':
+        return 'Draft';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
     }
   };
 
@@ -551,6 +572,33 @@ export default function CalendarPage() {
             </div>
           </div>
 
+          {/* Event Status Legend */}
+          <div className="mt-4 p-3 bg-muted/20 rounded-lg border">
+            <h4 className="text-sm font-medium mb-2">Event Status Legend</h4>
+            <div className="flex flex-wrap gap-3 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></div>
+                <span>Published</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-orange-100 border border-orange-200"></div>
+                <span>Pencil Hold</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-200"></div>
+                <span>Confirmed</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></div>
+                <span>Draft</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></div>
+                <span>Cancelled</span>
+              </div>
+            </div>
+          </div>
+
           {viewMode === 'week' ? (
             /* Weekly Calendar View */
             <>
@@ -578,15 +626,44 @@ export default function CalendarPage() {
                             <Link
                               key={event._id}
                               href={getEventUrl(event)}
-                              className="block p-2 rounded border-l-2 bg-muted/30 hover:bg-muted/50 transition-colors"
+                              className={`block p-2 rounded border-l-2 hover:bg-muted/50 transition-colors ${
+                                event.status === 'pencil_hold'
+                                  ? 'bg-orange-50 border-l-orange-500'
+                                  : event.status === 'pencil_hold_confirmed'
+                                    ? 'bg-blue-50 border-l-blue-500'
+                                    : event.status === 'published'
+                                      ? 'bg-green-50 border-l-green-500'
+                                      : event.status === 'draft'
+                                        ? 'bg-yellow-50 border-l-yellow-500'
+                                        : event.status === 'cancelled'
+                                          ? 'bg-red-50 border-l-red-500'
+                                          : 'bg-muted/30'
+                              }`}
                               style={{
-                                borderLeftColor: event.category?.color || '#3b82f6'
+                                borderLeftColor: event.status === 'pencil_hold'
+                                  ? '#f97316'
+                                  : event.status === 'pencil_hold_confirmed'
+                                    ? '#3b82f6'
+                                    : event.status === 'published'
+                                      ? '#22c55e'
+                                      : event.status === 'draft'
+                                        ? '#eab308'
+                                        : event.status === 'cancelled'
+                                          ? '#ef4444'
+                                          : event.category?.color || '#3b82f6'
                               }}
                             >
                               <div className="font-medium text-sm truncate">{event.title}</div>
                               <div className="text-xs text-muted-foreground">
                                 {formatEventTime(event.startDate)}
                               </div>
+                              {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
+                                <div className={`font-medium text-xs ${
+                                  event.status === 'pencil_hold' ? 'text-orange-600' : 'text-blue-600'
+                                }`}>
+                                  {getEventStatusDisplay(event.status)}
+                                </div>
+                              )}
                             </Link>
                           ))}
                           {dayEvents.length > 3 && (
@@ -654,9 +731,19 @@ export default function CalendarPage() {
                                   }}
                                 >
                                   <div className={`h-full rounded-sm border-l-2 p-1 text-xs transition-all duration-200 group-hover:shadow-md ${
-                                    event.category?.color 
-                                      ? `border-l-[${event.category.color}] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
-                                      : 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
+                                    event.status === 'pencil_hold'
+                                      ? 'border-l-orange-500 bg-orange-50 group-hover:bg-orange-100'
+                                      : event.status === 'pencil_hold_confirmed'
+                                        ? 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
+                                        : event.status === 'published'
+                                          ? 'border-l-green-500 bg-green-50 group-hover:bg-green-100'
+                                          : event.status === 'draft'
+                                            ? 'border-l-yellow-500 bg-yellow-50 group-hover:bg-yellow-100'
+                                            : event.status === 'cancelled'
+                                              ? 'border-l-red-500 bg-red-50 group-hover:bg-red-100'
+                                              : event.category?.color 
+                                                ? `border-l-[${event.category.color}] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
+                                                : 'border-l-blue-500 bg-blue-50 group-hover:bg-blue-100'
                                   }`}>
                                     <div className="font-medium text-foreground truncate">
                                       <span className="hidden sm:inline">{event.title}</span>
@@ -665,6 +752,14 @@ export default function CalendarPage() {
                                     <div className="text-muted-foreground truncate hidden sm:block">
                                       {formatEventTime(event.startDate)}
                                     </div>
+                                    {/* Status Indicator */}
+                                    {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
+                                      <div className={`font-medium text-xs truncate ${
+                                        event.status === 'pencil_hold' ? 'text-orange-600' : 'text-blue-600'
+                                      }`}>
+                                        {getEventStatusDisplay(event.status)}
+                                      </div>
+                                    )}
                                   </div>
                                 </Link>
                               );
@@ -724,9 +819,19 @@ export default function CalendarPage() {
                             className="block group"
                           >
                             <div className={`text-xs p-2 rounded-md border transition-all duration-200 group-hover:shadow-sm group-hover:scale-[1.02] ${
-                              event.category?.color 
-                                ? `border-[${event.category.color}20] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
-                                : 'border-blue-200 bg-blue-50 group-hover:bg-blue-100'
+                              event.status === 'pencil_hold'
+                                ? 'border-orange-200 bg-orange-50 group-hover:bg-orange-100'
+                                : event.status === 'pencil_hold_confirmed'
+                                  ? 'border-blue-200 bg-blue-50 group-hover:bg-blue-100'
+                                  : event.status === 'published'
+                                    ? 'border-green-200 bg-green-50 group-hover:bg-green-100'
+                                    : event.status === 'draft'
+                                      ? 'border-yellow-200 bg-yellow-50 group-hover:bg-yellow-100'
+                                      : event.status === 'cancelled'
+                                        ? 'border-red-200 bg-red-50 group-hover:bg-red-100'
+                                        : event.category?.color 
+                                          ? `border-[${event.category.color}20] bg-[${event.category.color}10] group-hover:bg-[${event.category.color}20]`
+                                          : 'border-blue-200 bg-blue-50 group-hover:bg-blue-100'
                             }`}>
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1">
@@ -736,12 +841,28 @@ export default function CalendarPage() {
                                   </span>
                                 </div>
                                 <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getEventStatusColor(event.status)}`}>
-                                  {event.status}
+                                  {getEventStatusDisplay(event.status)}
                                 </div>
                               </div>
                               <div className="font-medium text-foreground truncate mb-1">
                                 {event.title}
                               </div>
+                              
+                              {/* Pencil Hold Specific Information */}
+                              {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && event.pencilHoldInfo && (
+                                <div className="mb-2 p-1.5 bg-orange-50 border border-orange-200 rounded text-xs">
+                                  <div className="flex items-center gap-1 text-orange-700 font-medium mb-1">
+                                    <Clock className="h-3 w-3" />
+                                    Expires: {new Date(event.pencilHoldInfo.expiresAt).toLocaleDateString()} at {new Date(event.pencilHoldInfo.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                  {event.pencilHoldInfo.notes && (
+                                    <div className="text-orange-600 text-xs line-clamp-1">
+                                      {event.pencilHoldInfo.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1">
                                   {event.category && (
@@ -785,8 +906,13 @@ export default function CalendarPage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary">{event.category?.name || 'Event'}</Badge>
-                      <Badge variant="outline" className={`text-${event.status === 'published' ? 'green' : 'yellow'}-600`}>
-                        {event.status}
+                      <Badge variant="outline" className={`${
+                        event.status === 'published' ? 'text-green-600 border-green-200' :
+                        event.status === 'pencil_hold' ? 'text-orange-600 border-orange-200' :
+                        event.status === 'pencil_hold_confirmed' ? 'text-blue-600 border-blue-200' :
+                        'text-yellow-600 border-yellow-200'
+                      }`}>
+                        {getEventStatusDisplay(event.status)}
                       </Badge>
                     </div>
                     <CardTitle className="text-lg group-hover:text-primary transition-colors">
@@ -795,6 +921,21 @@ export default function CalendarPage() {
                     <CardDescription className="line-clamp-2">
                       {event.description}
                     </CardDescription>
+                    
+                    {/* Pencil Hold Information */}
+                    {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && event.pencilHoldInfo && (
+                      <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                        <div className="flex items-center gap-1 text-orange-700 font-medium mb-1">
+                          <Clock className="h-3 w-3" />
+                          Expires: {new Date(event.pencilHoldInfo.expiresAt).toLocaleDateString()} at {new Date(event.pencilHoldInfo.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        {event.pencilHoldInfo.notes && (
+                          <div className="text-orange-600 text-xs line-clamp-2">
+                            {event.pencilHoldInfo.notes}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2 text-sm text-muted-foreground">

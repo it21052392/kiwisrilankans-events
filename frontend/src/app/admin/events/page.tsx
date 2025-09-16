@@ -112,6 +112,8 @@ export default function AdminEventsPage() {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { variant: 'secondary' as const, label: 'Draft', icon: AlertCircle },
+      pencil_hold: { variant: 'outline' as const, label: 'Pencil Hold', icon: Clock },
+      pencil_hold_confirmed: { variant: 'default' as const, label: 'Pencil Hold Confirmed', icon: CheckCircle },
       pending_approval: { variant: 'outline' as const, label: 'Pending Approval', icon: Clock },
       published: { variant: 'default' as const, label: 'Published', icon: CheckCircle },
       rejected: { variant: 'destructive' as const, label: 'Rejected', icon: XCircle },
@@ -182,6 +184,8 @@ export default function AdminEventsPage() {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="needs_approval">Needs Approval</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="pencil_hold">Pencil Hold</SelectItem>
+                    <SelectItem value="pencil_hold_confirmed">Pencil Hold Confirmed</SelectItem>
                     <SelectItem value="pending_approval">Pending Approval</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
@@ -243,6 +247,11 @@ export default function AdminEventsPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <CardTitle className="text-xl">{event.title}</CardTitle>
                         {getStatusBadge(event.status)}
+                        {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && event.pencilHoldInfo && (
+                          <Badge variant="outline" className="text-xs">
+                            Expires: {format(new Date(event.pencilHoldInfo.expiresAt), 'MMM do, h:mm a')}
+                          </Badge>
+                        )}
                       </div>
                       <CardDescription className="line-clamp-2">
                         {event.description}
@@ -267,7 +276,7 @@ export default function AdminEventsPage() {
                           <Edit className="h-4 w-4" />
                         </Button>
                       </Link>
-                      {(event.status === 'pending_approval' || event.status === 'draft') && (
+                      {(event.status === 'pending_approval' || event.status === 'draft' || event.status === 'pencil_hold_confirmed') && (
                         <>
                           <Button
                             size="sm"

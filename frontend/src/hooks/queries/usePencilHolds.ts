@@ -104,3 +104,15 @@ export const useCancelPencilHold = () => {
     },
   });
 };
+
+export const useEventsWithPencilHolds = (filters: {
+  page?: number;
+  limit?: number;
+  status?: string;
+} = {}) => {
+  return useQuery({
+    queryKey: ['pencil-holds', 'events', filters],
+    queryFn: () => pencilHoldsService.getEventsWithPencilHolds(filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};

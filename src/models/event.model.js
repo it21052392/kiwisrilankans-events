@@ -119,6 +119,8 @@ const eventSchema = new mongoose.Schema(
       type: String,
       enum: [
         'draft',
+        'pencil_hold',
+        'pencil_hold_confirmed',
         'pending_approval',
         'published',
         'rejected',
@@ -174,6 +176,25 @@ const eventSchema = new mongoose.Schema(
     pencilHoldCount: {
       type: Number,
       default: 0,
+    },
+    pencilHoldInfo: {
+      pencilHoldId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PencilHold',
+      },
+      expiresAt: {
+        type: Date,
+      },
+      notes: {
+        type: String,
+        maxlength: [500, 'Pencil hold notes cannot exceed 500 characters'],
+      },
+      priority: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: 5,
+      },
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,5 +1,6 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { pencilHoldService } from '../services/pencilHolds.service.js';
+import { eventService } from '../services/events.service.js';
 import { logger } from '../config/logger.js';
 
 // @desc    Get all pencil holds
@@ -175,6 +176,39 @@ const cancelPencilHold = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get events with pencil holds
+// @route   GET /api/pencil-holds/events
+// @access  Private/Admin
+const getEventsWithPencilHolds = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10, status } = req.query;
+
+  const events = await eventService.getEventsWithPencilHolds({
+    page: parseInt(page),
+    limit: parseInt(limit),
+    status,
+  });
+
+  res.json({
+    success: true,
+    data: events,
+  });
+});
+
+// @desc    Handle expired pencil holds
+// @route   POST /api/pencil-holds/expired
+// @access  Private/Admin
+const handleExpiredPencilHolds = asyncHandler(async (req, res) => {
+  const expiredCount = await pencilHoldService.handleExpiredPencilHolds();
+
+  logger.info(`Processed ${expiredCount} expired pencil holds`);
+
+  res.json({
+    success: true,
+    message: `Processed ${expiredCount} expired pencil holds`,
+    data: { expiredCount },
+  });
+});
+
 export {
   getPencilHolds,
   getPencilHoldById,
@@ -185,4 +219,6 @@ export {
   confirmPencilHold,
   approvePencilHold,
   cancelPencilHold,
+  getEventsWithPencilHolds,
+  handleExpiredPencilHolds,
 };
