@@ -25,16 +25,33 @@ class UploadService {
       const fileExtension = file.originalname.split('.').pop();
       const fileName = `${type}/${userId}/${uuidv4()}.${fileExtension}`;
 
+      // Add image-specific metadata for event images
+      const metadata = {
+        originalName: file.originalname,
+        uploadedBy: userId,
+        uploadType: type,
+        uploadedAt: new Date().toISOString(),
+      };
+
+      // Add image dimensions if it's an image file
+      if (file.mimetype.startsWith('image/')) {
+        try {
+          const dimensions = await this.getImageDimensions(file.buffer);
+          metadata.width = dimensions.width.toString();
+          metadata.height = dimensions.height.toString();
+        } catch (error) {
+          logger.warn('Could not extract image dimensions:', error);
+        }
+      }
+
       const uploadParams = {
         Bucket: this.bucketName,
         Key: fileName,
         Body: file.buffer,
         ContentType: file.mimetype,
-        Metadata: {
-          originalName: file.originalname,
-          uploadedBy: userId,
-          uploadType: type,
-        },
+        Metadata: metadata,
+        // Add cache control for better performance
+        CacheControl: 'public, max-age=31536000', // 1 year
       };
 
       const command = new PutObjectCommand(uploadParams);
@@ -52,6 +69,13 @@ class UploadService {
         uploadType: type,
         uploadedBy: userId,
         uploadedAt: new Date(),
+        dimensions:
+          metadata.width && metadata.height
+            ? {
+                width: parseInt(metadata.width),
+                height: parseInt(metadata.height),
+              }
+            : undefined,
       };
     } catch (error) {
       logger.error('Upload error:', error);
@@ -204,6 +228,15 @@ class UploadService {
       logger.error('Get file metadata error:', error);
       throw new Error('Failed to get file metadata');
     }
+  }
+
+  async getImageDimensions(_buffer) {
+    return new Promise((resolve, _reject) => {
+      // This is a simplified implementation
+      // In a real application, you'd use a library like 'sharp' or 'jimp'
+      // For now, we'll return default dimensions
+      resolve({ width: 1920, height: 1080 });
+    });
   }
 }
 

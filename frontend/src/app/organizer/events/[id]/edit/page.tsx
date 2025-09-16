@@ -24,12 +24,12 @@ import {
   Plus,
   X,
   Save,
-  Send,
-  Upload,
-  Image as ImageIcon
+  Send
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { useEvent, useUpdateEventByOrganizer } from '@/hooks/queries/useEvents';
+import { EventImageUpload } from '@/components/events/EventImageUpload';
+import { ImageUploadResult } from '@/services/image-upload.service';
 import toast from 'react-hot-toast';
 
 export default function EditEventPage() {
@@ -83,8 +83,7 @@ export default function EditEventPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [newTag, setNewTag] = useState('');
   const [newRequirement, setNewRequirement] = useState('');
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<ImageUploadResult[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
@@ -124,6 +123,24 @@ export default function EditEventPage() {
           phone: event.contactInfo?.phone || ''
         }
       });
+      
+      // Initialize uploaded images from existing event data
+      if (event.images && event.images.length > 0) {
+        const existingImages: ImageUploadResult[] = event.images.map((img, index) => ({
+          id: `existing-${index}`,
+          filename: img.url.split('/').pop() || `image-${index}`,
+          originalName: img.alt || `image-${index}`,
+          url: img.url,
+          size: 0, // Unknown size for existing images
+          type: 'image/jpeg', // Default type
+          uploadType: 'event_image',
+          uploadedBy: user?._id || '',
+          uploadedAt: new Date().toISOString(),
+          isPrimary: img.isPrimary || index === 0
+        }));
+        setUploadedImages(existingImages);
+      }
+      
       setIsLoading(false);
     }
   }, [eventData, user]);
@@ -274,46 +291,15 @@ export default function EditEventPage() {
     }));
   };
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select a valid image file');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size must be less than 5MB');
-        return;
-      }
-      
-      setSelectedImage(file);
-      
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
-      
-      // Update form data with image URL (for now, we'll use a placeholder)
-      // In a real app, you'd upload to a service and get the actual URL
-      setFormData(prev => ({
-        ...prev,
-        images: [{
-          url: previewUrl, // This will be replaced with actual uploaded URL
-          alt: file.name,
-          isPrimary: true
-        }]
-      }));
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
+  const handleImagesChange = (images: ImageUploadResult[]) => {
+    setUploadedImages(images);
     setFormData(prev => ({
       ...prev,
-      images: []
+      images: images.map(img => ({
+        url: img.url,
+        alt: img.originalName,
+        isPrimary: img.isPrimary
+      }))
     }));
   };
 
@@ -453,66 +439,14 @@ export default function EditEventPage() {
             </CardContent>
           </Card>
 
-          {/* Event Image */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5" />
-                Event Image
-              </CardTitle>
-              <CardDescription>
-                Upload a cover image for your event (optional)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!imagePreview && formData.images.length === 0 ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                  <input
-                    type="file"
-                    id="image-upload"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Upload className="h-8 w-8 text-gray-400" />
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium text-blue-600 hover:text-blue-500">
-                        Click to upload
-                      </span>{' '}
-                      or drag and drop
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      PNG, JPG, GIF up to 5MB
-                    </div>
-                  </label>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <img
-                      src={imagePreview || formData.images[0]?.url}
-                      alt="Event preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium">Selected:</span> {selectedImage?.name || 'Current image'}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Event Images */}
+          <EventImageUpload
+            images={uploadedImages}
+            onImagesChange={handleImagesChange}
+            maxImages={5}
+            disabled={isSubmitting}
+            showGuidelines={true}
+          />
 
           {/* Date & Time */}
           <Card>

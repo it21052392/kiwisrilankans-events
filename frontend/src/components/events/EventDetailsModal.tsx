@@ -17,11 +17,11 @@ import {
   Phone,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  Image as ImageIcon
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Event } from '@/store/event-store';
+import { EventImageGallery } from '@/components/events/EventImageGallery';
 
 interface EventDetailsModalProps {
   event: Event | null;
@@ -96,26 +96,26 @@ export function EventDetailsModal({
           {/* Event Images */}
           {event.images && event.images.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground">
-                <ImageIcon className="h-5 w-5" />
+              <h3 className="text-lg font-semibold text-foreground">
                 Event Images
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {event.images.map((image, index) => (
-                  <div key={index} className="relative aspect-video rounded-lg overflow-hidden border shadow-sm">
-                    <img
-                      src={image.url}
-                      alt={image.alt || `Event image ${index + 1}`}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                    />
-                    {image.isPrimary && (
-                      <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
-                        Primary
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <EventImageGallery
+                images={event.images.map((img, index) => ({
+                  id: `event-${index}`,
+                  filename: img.url.split('/').pop() || `image-${index}`,
+                  originalName: img.alt || `Event image ${index + 1}`,
+                  url: img.url,
+                  size: 0,
+                  type: 'image/jpeg',
+                  uploadType: 'event_image',
+                  uploadedBy: '',
+                  uploadedAt: new Date().toISOString(),
+                  isPrimary: img.isPrimary || index === 0
+                }))}
+                showPrimaryBadge={true}
+                allowFullscreen={true}
+                aspectRatio="video"
+              />
             </div>
           )}
 
