@@ -2,6 +2,7 @@
 
 import { ReactNode, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useUIStore } from '@/store/ui-store';
@@ -62,9 +63,14 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
       {/* Mobile menu */}
       <div className="lg:hidden">
         <div className="flex items-center justify-between p-4 border-b">
-          <Link href="/" className="flex items-center space-x-2">
-            <Calendar className="h-6 w-6 text-primary" />
-            <span className="font-bold">Kiwi Sri Lankans Events</span>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/images/Logosnew.png"
+              alt="Kiwi Sri Lankans Events"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
           </Link>
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -75,9 +81,14 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
             <SheetContent side="left" className="w-80">
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between mb-6">
-                  <Link href="/" className="flex items-center space-x-2">
-                    <Calendar className="h-6 w-6 text-primary" />
-                    <span className="font-bold">Kiwi Sri Lankans Events</span>
+                  <Link href="/" className="flex items-center">
+                    <Image
+                      src="/images/Logosnew.png"
+                      alt="Kiwi Sri Lankans Events"
+                      width={120}
+                      height={40}
+                      className="h-8 w-auto"
+                    />
                   </Link>
                 </div>
 
@@ -136,9 +147,14 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
         <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
           <div className="flex flex-col flex-grow bg-card border-r">
             <div className="flex items-center h-16 px-4 border-b">
-              <Link href="/" className="flex items-center space-x-2">
-                <Calendar className="h-6 w-6 text-primary" />
-                <span className="font-bold">Kiwi Sri Lankans Events</span>
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="/images/Logosnew.png"
+                  alt="Kiwi Sri Lankans Events"
+                  width={120}
+                  height={40}
+                  className="h-8 w-auto"
+                />
               </Link>
             </div>
 
