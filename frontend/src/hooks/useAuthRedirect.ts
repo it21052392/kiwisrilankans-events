@@ -20,11 +20,11 @@ export function useAuthRedirect() {
 
       console.log('Auth redirect check:', { isAuthenticated, user: user?.role, pathname, isLoading });
       
-      // Don't redirect if we're already on the login page
-      if (pathname === '/auth/login') return;
+      // Don't redirect if we're already on a login page
+      if (pathname === '/auth/login' || pathname === '/admin/login') return;
 
       // Public routes that don't require authentication
-      const publicRoutes = ['/auth/login', '/auth/callback', '/', '/events', '/categories', '/events/calendar'];
+      const publicRoutes = ['/auth/login', '/auth/callback', '/admin/login', '/', '/events', '/categories', '/events/calendar'];
       const isPublicRoute = publicRoutes.some(route => {
         if (route.includes('[') && route.includes(']')) {
           // Handle dynamic routes
@@ -47,7 +47,7 @@ export function useAuthRedirect() {
       }
 
       // If user is authenticated and on login page, redirect to appropriate dashboard
-      if (isAuthenticated && pathname === '/auth/login') {
+      if (isAuthenticated && (pathname === '/auth/login' || pathname === '/admin/login')) {
         console.log('Redirecting from login to dashboard');
         if (user?.role === 'admin') {
           router.push('/admin/dashboard');

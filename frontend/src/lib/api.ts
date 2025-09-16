@@ -58,6 +58,21 @@ class ApiClient {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Handle rate limiting with retry logic
+        if (response.status === 429) {
+          if (retryCount < 2) {
+            // Wait for 2 seconds before retrying
+            await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
+            return this.request<T>(endpoint, options, retryCount + 1);
+          }
+          throw new ApiError(
+            'Too many requests. Please wait a moment and try again.',
+            response.status,
+            errorData
+          );
+        }
+        
         throw new ApiError(
           errorData.message || `HTTP ${response.status}`,
           response.status,

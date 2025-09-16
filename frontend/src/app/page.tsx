@@ -271,13 +271,13 @@ export default function Home() {
       </section>
 
       {/* Category Showcase */}
-      <section className="py-24 relative overflow-hidden bg-slate-50">
+      <section className="py-16 relative overflow-hidden bg-slate-50">
         {/* Decorative elements */}
         <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-slate-200/30 to-slate-300/20 rounded-full blur-2xl" />
         <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-tl from-slate-300/20 to-slate-200/30 rounded-full blur-2xl" />
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-700 text-sm font-medium mb-6 shadow-sm border border-slate-200">
               <Heart className="h-4 w-4" />
               Event Categories
@@ -309,7 +309,7 @@ export default function Home() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-12">
                 {categories.map((category, index) => {
                   const IconComponent = categoryIcons[category.name.toLowerCase()] || categoryIcons.default;
                   return (
@@ -319,51 +319,43 @@ export default function Home() {
                       className="group block"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="relative h-full">
-                        {/* Hover glow effect */}
+                      {/* Ultra-compact card design */}
+                      <div className="relative bg-white rounded-lg border border-slate-200/50 hover:border-slate-300 group-hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden h-16">
+                        {/* Subtle background on hover */}
                         <div 
-                          className="absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500"
+                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                           style={{ 
-                            background: `linear-gradient(135deg, ${category.color}20, ${category.color}40)`,
-                            transform: 'scale(1.1)'
+                            background: `linear-gradient(135deg, ${category.color}05, ${category.color}10)`
                           }}
                         />
                         
-                        {/* Card */}
-                        <Card className="group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300 cursor-pointer h-full border-0 bg-white/80 backdrop-blur-sm">
-                          <CardContent className="p-8 text-center h-full flex flex-col justify-center relative">
-                            {/* Background pattern */}
-                            <div 
-                              className="absolute inset-0 rounded-2xl opacity-5"
-                              style={{ backgroundColor: category.color }}
+                        {/* Content - Horizontal layout, minimal spacing */}
+                        <div className="relative h-full flex items-center justify-center px-3 gap-2">
+                          {/* Icon */}
+                          <div 
+                            className="w-6 h-6 rounded-md flex items-center justify-center group-hover:scale-110 transition-transform duration-200 flex-shrink-0"
+                            style={{ 
+                              backgroundColor: `${category.color}20`,
+                              border: `1px solid ${category.color}30`
+                            }}
+                          >
+                            <IconComponent 
+                              className="h-3.5 w-3.5" 
+                              style={{ color: category.color }}
                             />
-                            
-                            <div 
-                              className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg"
-                              style={{ 
-                                background: `linear-gradient(135deg, ${category.color}15, ${category.color}25)`,
-                                border: `2px solid ${category.color}20`
-                              }}
-                            >
-                              <IconComponent 
-                                className="h-8 w-8 transition-all duration-300" 
-                                style={{ color: category.color }}
-                              />
-                            </div>
-                            
-                            <h3 className="font-bold text-base group-hover:text-slate-900 transition-colors duration-300 text-slate-700">
-                              {category.name}
-                            </h3>
-                            
-                            {/* Hover indicator */}
-                            <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <div 
-                                className="w-2 h-2 rounded-full mx-auto"
-                                style={{ backgroundColor: category.color }}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+                          
+                          {/* Text */}
+                          <span className="font-medium text-xs text-slate-600 group-hover:text-slate-800 transition-colors duration-200 truncate">
+                            {category.name}
+                          </span>
+                        </div>
+                        
+                        {/* Bottom accent line on hover */}
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-center"
+                          style={{ backgroundColor: category.color }}
+                        />
                       </div>
                     </Link>
                   );
