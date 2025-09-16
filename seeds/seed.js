@@ -59,8 +59,19 @@ const seedData = async () => {
         isEmailVerified: true,
         isActive: true,
       },
+      {
+        name: 'Event Organizer',
+        email: 'organizer@kiwisrilankans.com',
+        password: 'Organizer123!',
+        role: 'organizer',
+        isEmailVerified: true,
+        isActive: true,
+      },
     ]);
     logger.info('Created regular users');
+
+    // Get the organizer user for creating events
+    const organizerUser = users.find(user => user.role === 'organizer');
 
     // Create categories
     const categories = await Category.create([
@@ -69,7 +80,7 @@ const seedData = async () => {
         description: 'Traditional Sri Lankan cultural events and celebrations',
         color: '#FF6B6B',
         icon: 'calendar-heart',
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
         sortOrder: 1,
       },
       {
@@ -77,7 +88,7 @@ const seedData = async () => {
         description: 'Sports events, tournaments, and recreational activities',
         color: '#4ECDC4',
         icon: 'trophy',
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
         sortOrder: 2,
       },
       {
@@ -85,7 +96,7 @@ const seedData = async () => {
         description: 'Workshops, seminars, and educational programs',
         color: '#45B7D1',
         icon: 'book',
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
         sortOrder: 3,
       },
       {
@@ -94,7 +105,7 @@ const seedData = async () => {
           'Community meetups, networking events, and social activities',
         color: '#96CEB4',
         icon: 'users',
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
         sortOrder: 4,
       },
       {
@@ -102,7 +113,7 @@ const seedData = async () => {
         description: 'Religious ceremonies, festivals, and spiritual events',
         color: '#FFEAA7',
         icon: 'church',
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
         sortOrder: 5,
       },
     ]);
@@ -139,7 +150,7 @@ const seedData = async () => {
           email: 'events@kiwisrilankans.com',
           phone: '+64 9 123 4567',
         },
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
       },
       {
         title: 'Cricket Tournament',
@@ -170,7 +181,7 @@ const seedData = async () => {
           email: 'sports@kiwisrilankans.com',
           phone: '+64 9 234 5678',
         },
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
       },
       {
         title: 'Sinhala Language Workshop',
@@ -201,7 +212,7 @@ const seedData = async () => {
           email: 'education@kiwisrilankans.com',
           phone: '+64 9 345 6789',
         },
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
       },
       {
         title: 'Community BBQ',
@@ -232,7 +243,7 @@ const seedData = async () => {
           email: 'community@kiwisrilankans.com',
           phone: '+64 9 456 7890',
         },
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
       },
       {
         title: 'Vesak Festival',
@@ -263,7 +274,7 @@ const seedData = async () => {
           email: 'temple@kiwisrilankans.com',
           phone: '+64 9 567 8901',
         },
-        createdBy: adminUser._id,
+        createdBy: organizerUser._id,
       },
     ]);
     logger.info('Created sample events');

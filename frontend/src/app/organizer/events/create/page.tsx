@@ -87,7 +87,7 @@ export default function CreateEventPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

@@ -97,7 +97,7 @@ export default function AdminEditEventPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   useEffect(() => {
     if (eventData?.data?.event) {

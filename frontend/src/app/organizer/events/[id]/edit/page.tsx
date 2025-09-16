@@ -89,7 +89,7 @@ export default function EditEventPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   // Load event data when available
   useEffect(() => {

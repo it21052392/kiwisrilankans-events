@@ -46,7 +46,7 @@ export default function AdminWhitelistPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const whitelistEntries = whitelistData?.data?.emails || [];
 

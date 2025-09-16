@@ -150,7 +150,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   // Update parent when images change
   useEffect(() => {
     onImagesChange(images);
-  }, [images, onImagesChange]);
+  }, [images]); // Removed onImagesChange from dependencies to prevent infinite loops
 
   const handleImageUpload = useCallback(async (files: File[]) => {
     if (disabled || isUploading) return;

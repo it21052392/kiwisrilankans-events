@@ -80,7 +80,7 @@ export default function OrganizerPencilHoldsPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const pencilHolds = pencilHoldsData?.data?.pencilHolds || [];
   const events = eventsData?.data?.events || [];

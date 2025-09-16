@@ -48,6 +48,8 @@ export default function OrganizerEventsPage() {
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
     sortBy: 'createdAt',
     sortOrder: 'desc'
+  }, {
+    enabled: !!user?.id // Only fetch when user is authenticated and has an ID
   });
 
   // Fetch categories for filter
@@ -57,10 +59,19 @@ export default function OrganizerEventsPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const events = eventsData?.data?.events || [];
   const categories = categoriesData?.data?.categories || [];
+
+  // Debug logging
+  console.log('Organizer Events Debug:', {
+    isAuthenticated,
+    user: user ? { id: user.id, role: user.role, name: user.name } : null,
+    eventsLoading,
+    eventsCount: events.length,
+    eventsData: eventsData?.data
+  });
 
   const handleDeleteEvent = async (eventId: string) => {
     setIsDeleting(eventId);

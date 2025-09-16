@@ -63,7 +63,7 @@ export default function UserDetailPage() {
     if (!isAuthenticated || !currentUser || currentUser.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, currentUser, router]);
+  }, [isAuthenticated, currentUser]); // Removed router from dependencies
 
   useEffect(() => {
     if (user) {

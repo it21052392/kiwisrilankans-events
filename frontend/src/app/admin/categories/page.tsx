@@ -67,7 +67,7 @@ export default function AdminCategoriesPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const categories = categoriesData?.data?.categories || [];
 
