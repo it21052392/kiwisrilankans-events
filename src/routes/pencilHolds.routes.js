@@ -6,6 +6,7 @@ import {
   updatePencilHold,
   deletePencilHold,
   getMyPencilHolds,
+  getOrganizerPencilHolds,
   confirmPencilHold,
   approvePencilHold,
   cancelPencilHold,
@@ -41,6 +42,11 @@ router.get(
   '/my-holds',
   validateQuery(commonSchemas.pagination),
   getMyPencilHolds
+);
+router.get(
+  '/organizer-holds',
+  validateQuery(commonSchemas.pagination),
+  getOrganizerPencilHolds
 );
 
 // Admin routes for viewing all pencil holds

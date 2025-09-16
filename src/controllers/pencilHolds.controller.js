@@ -120,6 +120,28 @@ const getMyPencilHolds = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get organizer's pencil holds (for events they created)
+// @route   GET /api/pencil-holds/organizer-holds
+// @access  Private/Organizer
+const getOrganizerPencilHolds = asyncHandler(async (req, res) => {
+  const organizerId = req.user._id;
+  const { page = 1, limit = 10, status } = req.query;
+
+  const pencilHolds = await pencilHoldService.getOrganizerPencilHolds(
+    organizerId,
+    {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      status,
+    }
+  );
+
+  res.json({
+    success: true,
+    data: pencilHolds,
+  });
+});
+
 // @desc    Confirm pencil hold by organizer
 // @route   PATCH /api/pencil-holds/:id/confirm
 // @access  Private/Organizer
@@ -216,6 +238,7 @@ export {
   updatePencilHold,
   deletePencilHold,
   getMyPencilHolds,
+  getOrganizerPencilHolds,
   confirmPencilHold,
   approvePencilHold,
   cancelPencilHold,

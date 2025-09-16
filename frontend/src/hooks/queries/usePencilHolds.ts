@@ -26,6 +26,17 @@ export const useMyPencilHolds = (filters: {
   });
 };
 
+export const useOrganizerPencilHolds = (filters: {
+  page?: number;
+  limit?: number;
+} = {}) => {
+  return useQuery({
+    queryKey: ['pencil-holds', 'organizer-holds', filters],
+    queryFn: () => pencilHoldsService.getOrganizerPencilHolds(filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
 export const usePencilHold = (id: string) => {
   return useQuery({
     queryKey: ['pencil-holds', 'detail', id],

@@ -209,6 +209,55 @@ class PencilHoldService {
     };
   }
 
+  async getOrganizerPencilHolds(organizerId, { page = 1, limit = 10, status }) {
+    // Get events created by the organizer first
+    const organizerEvents = await Event.find({ createdBy: organizerId }).select(
+      '_id'
+    );
+    const eventIds = organizerEvents.map(event => event._id);
+
+    if (eventIds.length === 0) {
+      return {
+        pencilHolds: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          pages: 0,
+        },
+      };
+    }
+
+    // Get pencil holds for events created by the organizer
+    const query = { event: { $in: eventIds } };
+
+    if (status) {
+      query.status = status;
+    }
+
+    const pencilHolds = await PencilHold.find(query)
+      .populate(
+        'event',
+        'title startDate location capacity registrationCount createdBy'
+      )
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const total = await PencilHold.countDocuments(query);
+
+    return {
+      pencilHolds,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async confirmPencilHold(id) {
     const pencilHold = await PencilHold.findById(id);
 

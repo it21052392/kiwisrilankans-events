@@ -82,6 +82,14 @@ export const pencilHoldsService = {
     return apiClient.get<PencilHoldsResponse>('/api/pencil-holds/my-holds', filters);
   },
 
+  // Get organizer pencil holds (for events they created)
+  async getOrganizerPencilHolds(filters: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<PencilHoldsResponse> {
+    return apiClient.get<PencilHoldsResponse>('/api/pencil-holds/organizer-holds', filters);
+  },
+
   // Get events with pencil holds (admin only)
   async getEventsWithPencilHolds(filters: {
     page?: number;

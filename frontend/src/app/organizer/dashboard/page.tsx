@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEvents } from '@/hooks/queries/useEvents';
-import { usePencilHolds } from '@/hooks/queries/usePencilHolds';
+import { useOrganizerPencilHolds } from '@/hooks/queries/usePencilHolds';
 import toast from 'react-hot-toast';
 
 export default function OrganizerDashboard() {
@@ -37,8 +37,8 @@ export default function OrganizerDashboard() {
   });
 
   // Fetch pencil holds
-  const { data: pencilHoldsData, isLoading: pencilHoldsLoading } = usePencilHolds({
-    organizerId: user?.id,
+  const { data: pencilHoldsData, isLoading: pencilHoldsLoading } = useOrganizerPencilHolds({
+    page: 1,
     limit: 5
   });
 
@@ -269,17 +269,17 @@ export default function OrganizerDashboard() {
               ) : (
                 <div className="space-y-4">
                   {pencilHolds.slice(0, 3).map((hold) => (
-                    <div key={hold.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={hold._id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{hold.venueName}</h4>
+                        <h4 className="font-medium text-sm truncate">{hold.event?.title || 'Event Not Found'}</h4>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(hold.requestedDate).toLocaleDateString()}
+                            {hold.event?.startDate ? new Date(hold.event.startDate).toLocaleDateString() : 'No date'}
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {hold.timeSlot}
+                            {hold.event?.startDate ? new Date(hold.event.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'No time'}
                           </div>
                         </div>
                         <Badge 
