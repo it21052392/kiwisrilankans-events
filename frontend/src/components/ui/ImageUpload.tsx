@@ -54,8 +54,20 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  console.log('ImagePreview props:', {
+    imageId: image.id,
+    showActions,
+    isPrimary,
+    hasOnRemove: !!onRemove,
+    hasOnSetPrimary: !!onSetPrimary
+  });
+
   return (
-    <div className="relative group">
+    <div 
+      className="relative group"
+      onMouseEnter={() => console.log('Mouse enter on image:', image.id)}
+      onMouseLeave={() => console.log('Mouse leave on image:', image.id)}
+    >
       <div className="aspect-video rounded-lg overflow-hidden border bg-gray-50">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -90,12 +102,21 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       )}
 
       {showActions && (
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+        <div 
+          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2"
+          onMouseEnter={() => console.log('Mouse enter on actions overlay for image:', image.id)}
+        >
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => window.open(image.url, '_blank')}
-            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('View button clicked for image:', image.id);
+              window.open(image.url, '_blank');
+            }}
+            className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
+            style={{ zIndex: 10 }}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -103,8 +124,14 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             <Button
               size="sm"
               variant="secondary"
-              onClick={onSetPrimary}
-              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Set primary button clicked for image:', image.id);
+                onSetPrimary();
+              }}
+              className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
+              style={{ zIndex: 10 }}
             >
               <CheckCircle2 className="h-4 w-4" />
             </Button>
@@ -112,8 +139,14 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
           <Button
             size="sm"
             variant="destructive"
-            onClick={onRemove}
-            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Delete button clicked for image:', image.id);
+              onRemove();
+            }}
+            className="h-8 w-8 p-0 bg-red-500 hover:bg-red-600 text-white"
+            style={{ zIndex: 10 }}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -191,11 +224,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleRemoveImage = useCallback(async (imageId: string) => {
     try {
+      console.log('Attempting to delete image with ID:', imageId);
+      console.log('Current images:', images);
+      
       await ImageUploadService.deleteImage(imageId);
       const newImages = images.filter(img => img.id !== imageId);
+      console.log('New images after deletion:', newImages);
+      
       setImages(newImages);
       toast.success('Image removed successfully');
     } catch (error) {
+      console.error('Error deleting image:', error);
       toast.error('Failed to remove image');
     }
   }, [images]);
