@@ -576,12 +576,16 @@ export default function CreateEventPage() {
               {formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                       {tag}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
+                      <button
+                        type="button"
                         onClick={() => removeTag(tag)}
-                      />
+                        className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${tag} tag`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
                   ))}
                 </div>
@@ -617,10 +621,14 @@ export default function CreateEventPage() {
                   {formData.requirements.map((requirement, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <span className="text-sm">• {requirement}</span>
-                      <X
-                        className="h-3 w-3 cursor-pointer text-muted-foreground"
+                      <button
+                        type="button"
                         onClick={() => removeRequirement(requirement)}
-                      />
+                        className="hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${requirement} requirement`}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
                     </div>
                   ))}
                 </div>

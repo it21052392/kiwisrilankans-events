@@ -81,7 +81,7 @@ export default function AdminEventsPage() {
     try {
       await approveEventMutation.mutateAsync(eventId);
       toast.success('Event approved successfully');
-      handleCloseDetails();
+      refetch(); // Refresh the events list
     } catch (error) {
       console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
@@ -92,7 +92,7 @@ export default function AdminEventsPage() {
     try {
       await rejectEventMutation.mutateAsync({ id: eventId, reason });
       toast.success('Event rejected successfully');
-      handleCloseDetails();
+      refetch(); // Refresh the events list
     } catch (error) {
       console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');

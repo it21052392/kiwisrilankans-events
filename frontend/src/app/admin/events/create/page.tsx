@@ -514,12 +514,16 @@ export default function AdminCreateEventPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {formData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                         {tag}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
+                        <button
+                          type="button"
                           onClick={() => removeTag(tag)}
-                        />
+                          className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${tag} tag`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </Badge>
                     ))}
                   </div>
