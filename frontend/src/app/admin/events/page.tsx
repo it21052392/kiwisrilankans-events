@@ -28,7 +28,6 @@ import {
 import Link from 'next/link';
 import { useAdminEvents, useApproveEvent, useRejectEvent } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
-import { EventDetailsModal } from '@/components/events/EventDetailsModal';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { formatEventTime, formatEventDateShort } from '@/lib/time-utils';
@@ -39,8 +38,6 @@ export default function AdminEventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Fetch all events for admin
   const { data: eventsData, isLoading: eventsLoading, refetch } = useAdminEvents({
@@ -77,13 +74,7 @@ export default function AdminEventsPage() {
   });
 
   const handleViewDetails = (event: any) => {
-    setSelectedEvent(event);
-    setIsDetailsModalOpen(true);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedEvent(null);
-    setIsDetailsModalOpen(false);
+    router.push(`/admin/events/${event._id}/view`);
   };
 
   const handleApproveEvent = async (eventId: string) => {
@@ -424,16 +415,6 @@ export default function AdminEventsPage() {
           </Card>
         )}
 
-        {/* Event Details Modal */}
-        <EventDetailsModal
-          event={selectedEvent}
-          isOpen={isDetailsModalOpen}
-          onClose={handleCloseDetails}
-          onApprove={handleApproveEvent}
-          onReject={handleRejectEvent}
-          isApproving={approveEventMutation.isPending}
-          isRejecting={rejectEventMutation.isPending}
-        />
       </div>
     </AdminLayout>
   );
