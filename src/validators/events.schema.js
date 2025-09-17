@@ -62,6 +62,20 @@ export const eventSchemas = {
         .max(10000, 'Capacity cannot exceed 10000'),
       price: z.number().min(0, 'Price cannot be negative'),
       currency: z.enum(['NZD', 'USD', 'AUD', 'EUR', 'GBP']).default('NZD'),
+      startTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'Start time must be in HH:MM format'
+        )
+        .optional(),
+      endTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'End time must be in HH:MM format'
+        )
+        .optional(),
       images: z
         .array(
           z.object({
@@ -179,6 +193,20 @@ export const eventSchemas = {
       currency: z.enum(['NZD', 'USD', 'AUD', 'EUR', 'GBP']).optional(),
       status: z
         .enum(['draft', 'published', 'cancelled', 'completed'])
+        .optional(),
+      startTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'Start time must be in HH:MM format'
+        )
+        .optional(),
+      endTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'End time must be in HH:MM format'
+        )
         .optional(),
       featured: z.boolean().optional(),
       images: z
@@ -354,6 +382,20 @@ export const eventSchemas = {
         .max(10000, 'Capacity cannot exceed 10000')
         .optional(),
       price: z.number().min(0, 'Price cannot be negative').optional(),
+      startTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'Start time must be in HH:MM format'
+        )
+        .optional(),
+      endTime: z
+        .string()
+        .regex(
+          /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+          'End time must be in HH:MM format'
+        )
+        .optional(),
       currency: z.enum(['NZD', 'USD', 'AUD', 'EUR', 'GBP']).optional(),
       // Organizers cannot change status, featured, or approval fields
       images: z
