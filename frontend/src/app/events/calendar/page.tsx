@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime as formatEventTimeUtil, formatEventDateShort } from '@/lib/time-utils';
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -229,9 +230,8 @@ export default function CalendarPage() {
     return date < today;
   };
 
-  const formatEventTime = (startDate: string) => {
-    const date = new Date(startDate);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatEventTime = (event: any) => {
+    return formatEventTimeUtil(event);
   };
 
   const getEventStatusColor = (status: string) => {
@@ -657,7 +657,7 @@ export default function CalendarPage() {
                             >
                               <div className="font-medium text-sm truncate">{event.title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {formatEventTime(event.startDate)}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                                {formatEventTime(event)}
                               </div>
                               {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
                                 <div className={`font-medium text-xs ${
@@ -769,7 +769,7 @@ export default function CalendarPage() {
                                     <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
                                   </div>
                                   <div className="text-muted-foreground truncate hidden sm:block">
-                                    {formatEventTime(event.startDate)}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                                    {formatEventTime(event)}
                                   </div>
                                   {/* Status Indicator */}
                                   {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
@@ -855,7 +855,7 @@ export default function CalendarPage() {
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 text-muted-foreground" />
                                   <span className="text-xs font-medium text-muted-foreground">
-                                    {formatEventTime(event.startDate)}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                                    {formatEventTime(event)}
                                   </span>
                                 </div>
                                 <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getEventStatusColor(event.status)}`}>

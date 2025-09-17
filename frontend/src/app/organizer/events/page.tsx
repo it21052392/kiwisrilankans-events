@@ -31,6 +31,7 @@ import { useCategories } from '@/hooks/queries/useCategories';
 import { eventsService } from '@/services/events.service';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDateShort } from '@/lib/time-utils';
 
 export default function OrganizerEventsPage() {
   const router = useRouter();
@@ -254,14 +255,11 @@ export default function OrganizerEventsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(event.startDate), 'MMM do, yyyy')}</span>
+                      <span>{formatEventDateShort(event)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      <span>
-                        {format(new Date(event.startDate), 'h:mm a')}
-                        {event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
-                      </span>
+                      <span>{formatEventTime(event)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4" />

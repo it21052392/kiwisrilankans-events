@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime as formatEventTimeUtil } from '@/lib/time-utils';
 
 interface CalendarWidgetProps {
   showTitle?: boolean;
@@ -397,7 +398,7 @@ export function CalendarWidget({
                                         <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
                                       </div>
                                       <div className="text-muted-foreground truncate hidden sm:block">
-                                        {formatEventTime(event.startDate)}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                                        {formatEventTimeUtil(event)}
                                       </div>
                                       {/* Status Indicator */}
                                       {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
@@ -483,7 +484,7 @@ export function CalendarWidget({
                                 {event.title}
                               </div>
                               <div className="text-muted-foreground text-xs">
-                                {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                {formatEventTimeUtil(event)}
                               </div>
                             </div>
                           </Link>
@@ -537,7 +538,7 @@ export function CalendarWidget({
                             {event.title}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {format(new Date(event.startDate), 'MMM do, h:mm a')}
+                            {format(new Date(event.startDate), 'MMM do')} {formatEventTimeUtil(event)}
                           </div>
                         </div>
                         <div className="flex-shrink-0">

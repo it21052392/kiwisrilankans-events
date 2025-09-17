@@ -20,6 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDate } from '@/lib/time-utils';
 import { Event } from '@/store/event-store';
 import { EventImageGallery } from '@/components/events/EventImageGallery';
 
@@ -134,8 +135,8 @@ export function EventDetailsModal({
                   <div className="flex items-start gap-3">
                     <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium text-sm text-muted-foreground">Start Date:</span>
-                      <div className="text-sm font-medium">{format(new Date(event.startDate), 'EEEE, MMMM do, yyyy')}</div>
+                      <span className="font-medium text-sm text-muted-foreground">Date:</span>
+                      <div className="text-sm font-medium">{formatEventDate(event)}</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -143,7 +144,7 @@ export function EventDetailsModal({
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm text-muted-foreground">Time:</span>
                       <div className="text-sm font-medium">
-                        {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                        {formatEventTime(event)}
                       </div>
                     </div>
                   </div>

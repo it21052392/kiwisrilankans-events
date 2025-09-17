@@ -343,7 +343,7 @@ class EventService {
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
       .select(
-        '_id title slug startDate endDate location category images price currency status pencilHoldInfo createdBy'
+        '_id title slug startDate endDate startTime endTime location category images price currency status pencilHoldInfo createdBy'
       )
       .sort({ startDate: 1 });
 
@@ -397,7 +397,7 @@ class EventService {
       .populate('category', 'name color icon')
       .populate('createdBy', 'name email')
       .select(
-        'title description startDate endDate location category images price currency capacity featured status pencilHoldInfo createdBy'
+        'title description startDate endDate startTime endTime location category images price currency capacity featured status pencilHoldInfo createdBy'
       )
       .sort(sort)
       .skip((page - 1) * limit)

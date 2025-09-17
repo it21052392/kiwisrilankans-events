@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDate } from '@/lib/time-utils';
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -171,10 +172,10 @@ export default function EventDetailPage() {
                     <div>
                       <div className="font-semibold">Date & Time</div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(event.startDate), 'EEEE, MMMM do, yyyy')}
+                        {formatEventDate(event)}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                        {formatEventTime(event)}
                       </div>
                     </div>
                   </div>

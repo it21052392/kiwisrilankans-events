@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDate, formatEventDateShort } from '@/lib/time-utils';
 
 interface EventCardProps {
   event: {
@@ -185,11 +186,11 @@ export function EventCard({
             <div className="space-y-3">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4 mr-2" />
-                {format(new Date(event.startDate), 'EEEE, MMMM do, yyyy')}
+                {formatEventDate(event)}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 mr-2" />
-                {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                {formatEventTime(event)}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-2" />
@@ -267,7 +268,7 @@ export function EventCard({
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-2" />
-              {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+              {formatEventTime(event)}
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mr-2" />
