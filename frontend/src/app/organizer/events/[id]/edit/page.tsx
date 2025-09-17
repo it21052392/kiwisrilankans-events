@@ -95,13 +95,39 @@ export default function EditEventPage() {
   useEffect(() => {
     if (eventData?.data?.event) {
       const event = eventData.data.event;
+      
+      // Helper function to combine date and time fields
+      const combineDateTime = (dateField: string, timeField: string) => {
+        if (!dateField) return '';
+        const date = new Date(dateField);
+        if (timeField) {
+          const [hours, minutes] = timeField.split(':').map(Number);
+          // Use UTC methods to avoid timezone conversion
+          date.setUTCHours(hours, minutes, 0, 0);
+        }
+        return date.toISOString().slice(0, 16);
+      };
+
+      // Helper function to combine date and time fields, using startDate as fallback for endDate
+      const combineDateTimeWithFallback = (dateField: string, timeField: string, fallbackDate?: string) => {
+        const dateToUse = dateField || fallbackDate;
+        if (!dateToUse) return '';
+        const date = new Date(dateToUse);
+        if (timeField) {
+          const [hours, minutes] = timeField.split(':').map(Number);
+          // Use UTC methods to avoid timezone conversion
+          date.setUTCHours(hours, minutes, 0, 0);
+        }
+        return date.toISOString().slice(0, 16);
+      };
+      
       setFormData({
         title: event.title || '',
         description: event.description || '',
         category: event.category?._id || '',
-        startDate: event.startDate ? new Date(event.startDate).toISOString().slice(0, 16) : '',
-        endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
-        registrationDeadline: event.registrationDeadline ? new Date(event.registrationDeadline).toISOString().slice(0, 16) : '',
+        startDate: combineDateTime(event.startDate, event.startTime),
+        endDate: combineDateTimeWithFallback(event.endDate, event.endTime, event.startDate),
+        registrationDeadline: combineDateTime(event.registrationDeadlineDate, event.registrationDeadlineTime),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -311,12 +337,29 @@ export default function EditEventPage() {
 
     setIsSubmitting(true);
     try {
+      // Helper function to split datetime-local into date and time fields
+      const splitDateTime = (dateTimeString: string) => {
+        if (!dateTimeString) return { date: '', time: '' };
+        const date = new Date(dateTimeString);
+        const dateStr = date.toISOString().split('T')[0];
+        const timeStr = dateTimeString.split('T')[1] || '';
+        return { date: dateStr, time: timeStr };
+      };
+
+      // Split datetime fields into separate date and time components
+      const startDateTime = splitDateTime(formData.startDate);
+      const endDateTime = splitDateTime(formData.endDate);
+      const registrationDateTime = splitDateTime(formData.registrationDeadline);
+
       // Format dates to include timezone information for backend validation
       const eventData = {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
-        registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
+        startTime: startDateTime.time,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.startDate, // Use startDate as fallback
+        endTime: endDateTime.time,
+        registrationDeadlineDate: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
+        registrationDeadlineTime: registrationDateTime.time,
       };
 
       await updateEventMutation.mutateAsync({
