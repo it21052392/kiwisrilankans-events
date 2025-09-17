@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { useCreatePencilHold } from '@/hooks/queries/usePencilHolds';
+import { useCreateEvent } from '@/hooks/queries/useEvents';
 import { eventsService, CreateEventData } from '@/services/events.service';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
@@ -44,7 +45,8 @@ export default function CreateEventPage() {
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   
-  // Pencil hold mutation
+  // Mutations
+  const createEventMutation = useCreateEvent();
   const createPencilHoldMutation = useCreatePencilHold();
 
   // Form state
@@ -261,7 +263,7 @@ export default function CreateEventPage() {
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
       };
 
-      const response = await eventsService.createEvent(eventData);
+      const response = await createEventMutation.mutateAsync(eventData);
       
       if (response.success) {
         const eventId = response.data.event._id;
@@ -730,10 +732,10 @@ export default function CreateEventPage() {
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
               <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Creating...' : 'Create Event'}
+              {(isSubmitting || createEventMutation.isPending) ? 'Creating...' : 'Create Event'}
             </Button>
           </div>
         </form>

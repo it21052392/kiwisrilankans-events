@@ -28,6 +28,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
+import { useCreateEvent } from '@/hooks/queries/useEvents';
 import { eventsService, CreateEventData } from '@/services/events.service';
 import toast from 'react-hot-toast';
 
@@ -39,6 +40,9 @@ export default function AdminCreateEventPage() {
   
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  
+  // Mutations
+  const createEventMutation = useCreateEvent();
 
   // Form state
   const [formData, setFormData] = useState<CreateEventData>({
@@ -189,7 +193,7 @@ export default function AdminCreateEventPage() {
         status: status === 'published' ? 'published' : 'draft' // Admin can directly publish
       };
 
-      const response = await eventsService.createEvent(eventData);
+      const response = await createEventMutation.mutateAsync(eventData);
       
       if (response.success) {
         toast.success(`Event ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
@@ -240,9 +244,9 @@ export default function AdminCreateEventPage() {
             <Button 
               variant="outline" 
               onClick={() => handleSubmit('draft')}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
-              {isSubmitting ? (
+              {(isSubmitting || createEventMutation.isPending) ? (
                 <LoadingSpinner size="sm" />
               ) : (
                 <>
@@ -253,9 +257,9 @@ export default function AdminCreateEventPage() {
             </Button>
             <Button 
               onClick={() => handleSubmit('published')}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
-              {isSubmitting ? (
+              {(isSubmitting || createEventMutation.isPending) ? (
                 <LoadingSpinner size="sm" />
               ) : (
                 <>
