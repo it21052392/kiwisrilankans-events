@@ -43,7 +43,6 @@ export interface CreateEventData {
   category: string;
   startDate: string;
   endDate: string;
-  registrationDeadline?: string;
   location: {
     name: string;
     address: string;

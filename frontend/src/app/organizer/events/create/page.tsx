@@ -54,7 +54,6 @@ export default function CreateEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -113,7 +112,7 @@ export default function CreateEventPage() {
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.endDate = 'End date must be after start date';
+      newErrors.endDate = 'End date must be on or after start date';
     }
 
     if (!formData.location.name.trim()) {
@@ -260,7 +259,6 @@ export default function CreateEventPage() {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
-        registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
       };
 
       const response = await eventsService.createEvent(eventData);
@@ -434,15 +432,6 @@ export default function CreateEventPage() {
                   {errors.endDate && <p className="text-sm text-red-500">{errors.endDate}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => handleInputChange('registrationDeadline', e.target.value)}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>

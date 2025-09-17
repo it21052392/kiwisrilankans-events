@@ -393,7 +393,6 @@ This system uses a role-based access control (RBAC) with Google OAuth authentica
   "category": "64a1b2c3d4e5f6789012345",
   "startDate": "2024-02-15T18:00:00.000Z",
   "endDate": "2024-02-15T23:00:00.000Z",
-  "registrationDeadline": "2024-02-10T23:59:59.000Z",
   "location": {
     "name": "Auckland Town Hall",
     "address": "303 Queen Street, Auckland",

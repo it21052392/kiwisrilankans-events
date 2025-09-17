@@ -47,7 +47,6 @@ export default function AdminCreateEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -105,12 +104,9 @@ export default function AdminCreateEventPage() {
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.endDate = 'End date must be after start date';
+      newErrors.endDate = 'End date must be on or after start date';
     }
 
-    if (formData.registrationDeadline && formData.startDate && new Date(formData.registrationDeadline) > new Date(formData.startDate)) {
-      newErrors.registrationDeadline = 'Registration deadline must be before start date';
-    }
 
     if (!formData.location.name.trim()) {
       newErrors.locationName = 'Location name is required';
@@ -371,17 +367,6 @@ export default function AdminCreateEventPage() {
                     />
                     {errors.endDate && <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>}
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, registrationDeadline: e.target.value }))}
-                    className={errors.registrationDeadline ? 'border-red-500' : ''}
-                  />
-                  {errors.registrationDeadline && <p className="text-sm text-red-500 mt-1">{errors.registrationDeadline}</p>}
                 </div>
               </CardContent>
             </Card>

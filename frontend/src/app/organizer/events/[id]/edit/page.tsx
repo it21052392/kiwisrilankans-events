@@ -56,7 +56,6 @@ export default function EditEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -127,7 +126,6 @@ export default function EditEventPage() {
         category: event.category?._id || '',
         startDate: combineDateTime(event.startDate, event.startTime),
         endDate: combineDateTimeWithFallback(event.endDate, event.endTime, event.startDate),
-        registrationDeadline: combineDateTime(event.registrationDeadlineDate, event.registrationDeadlineTime),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -195,7 +193,7 @@ export default function EditEventPage() {
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.endDate = 'End date must be after start date';
+      newErrors.endDate = 'End date must be on or after start date';
     }
 
     if (!formData.location.name.trim()) {
@@ -349,8 +347,6 @@ export default function EditEventPage() {
       // Split datetime fields into separate date and time components
       const startDateTime = splitDateTime(formData.startDate);
       const endDateTime = splitDateTime(formData.endDate);
-      const registrationDateTime = splitDateTime(formData.registrationDeadline);
-
       // Format dates to include timezone information for backend validation
       const eventData = {
         ...formData,
@@ -358,8 +354,6 @@ export default function EditEventPage() {
         startTime: startDateTime.time,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.startDate, // Use startDate as fallback
         endTime: endDateTime.time,
-        registrationDeadlineDate: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
-        registrationDeadlineTime: registrationDateTime.time,
       };
 
       await updateEventMutation.mutateAsync({
@@ -528,15 +522,6 @@ export default function EditEventPage() {
                   {errors.endDate && <p className="text-sm text-red-500">{errors.endDate}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => handleInputChange('registrationDeadline', e.target.value)}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>

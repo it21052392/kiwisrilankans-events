@@ -63,7 +63,6 @@ export default function AdminEditEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -108,7 +107,6 @@ export default function AdminEditEventPage() {
         category: event.category?._id || '',
         startDate: event.startDate ? format(new Date(event.startDate), "yyyy-MM-dd'T'HH:mm") : '',
         endDate: event.endDate ? format(new Date(event.endDate), "yyyy-MM-dd'T'HH:mm") : '',
-        registrationDeadline: event.registrationDeadline ? format(new Date(event.registrationDeadline), "yyyy-MM-dd'T'HH:mm") : '',
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -449,15 +447,6 @@ export default function AdminEditEventPage() {
                     value={formData.endDate}
                     onChange={(e) => handleInputChange('endDate', e.target.value)}
                     required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => handleInputChange('registrationDeadline', e.target.value)}
                   />
                 </div>
               </div>

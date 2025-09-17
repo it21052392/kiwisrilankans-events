@@ -13,28 +13,77 @@ export const validate = schema => {
       });
 
       if (!validationResult.success) {
-        const errors = (validationResult.error?.errors || []).map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
-          received: err.input,
-        }));
+        const errors = (validationResult.error?.issues || []).map(err => {
+          const fieldPath = err.path.join('.');
+          const fieldName = err.path[err.path.length - 1];
+
+          return {
+            field: fieldPath,
+            fieldName: fieldName,
+            message: err.message,
+            code: err.code,
+            received: err.input,
+            expected: err.expected,
+            receivedType: typeof err.input,
+            path: err.path,
+            // Add more specific error details based on the error code
+            ...(err.code === 'invalid_type' && {
+              expectedType: err.expected,
+              receivedType: err.received,
+            }),
+            ...(err.code === 'too_small' && {
+              minimum: err.minimum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'too_big' && {
+              maximum: err.maximum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'invalid_string' && {
+              validation: err.validation,
+            }),
+            ...(err.code === 'invalid_enum_value' && {
+              options: err.options,
+            }),
+            ...(err.code === 'invalid_regex' && {
+              regex: err.regex,
+            }),
+          };
+        });
+
+        // Group errors by field for better organization
+        const errorsByField = errors.reduce((acc, error) => {
+          if (!acc[error.field]) {
+            acc[error.field] = [];
+          }
+          acc[error.field].push(error);
+          return acc;
+        }, {});
 
         logger.warn('Validation failed:', {
           errors,
+          errorsByField,
           body: req.body,
           query: req.query,
           params: req.params,
           url: req.url,
+          method: req.method,
         });
 
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
           errors,
+          errorsByField,
           details: {
             totalErrors: errors.length,
             fields: errors.map(e => e.field),
+            fieldCount: Object.keys(errorsByField).length,
+            validationSummary: Object.keys(errorsByField).map(field => ({
+              field,
+              errorCount: errorsByField[field].length,
+              firstError: errorsByField[field][0].message,
+            })),
           },
         });
       }
@@ -59,6 +108,7 @@ export const validate = schema => {
         query: req.query,
         params: req.params,
         url: req.url,
+        method: req.method,
       });
 
       return res.status(500).json({
@@ -78,29 +128,86 @@ export const validate = schema => {
 export const validateBody = schema => {
   return (req, res, next) => {
     try {
+      // Add debugging information
+      logger.debug('Validating request body:', {
+        body: req.body,
+        schemaKeys: Object.keys(schema.shape || {}),
+        url: req.url,
+        method: req.method,
+      });
+
       const validationResult = schema.shape.body.safeParse(req.body);
 
       if (!validationResult.success) {
-        const errors = (validationResult.error?.errors || []).map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
-          received: err.input,
-        }));
+        const errors = (validationResult.error?.issues || []).map(err => {
+          const fieldPath = err.path.join('.');
+          const fieldName = err.path[err.path.length - 1];
+
+          return {
+            field: fieldPath,
+            fieldName: fieldName,
+            message: err.message,
+            code: err.code,
+            received: err.input,
+            expected: err.expected,
+            receivedType: typeof err.input,
+            path: err.path,
+            // Add more specific error details based on the error code
+            ...(err.code === 'invalid_type' && {
+              expectedType: err.expected,
+              receivedType: err.received,
+            }),
+            ...(err.code === 'too_small' && {
+              minimum: err.minimum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'too_big' && {
+              maximum: err.maximum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'invalid_string' && {
+              validation: err.validation,
+            }),
+            ...(err.code === 'invalid_enum_value' && {
+              options: err.options,
+            }),
+            ...(err.code === 'invalid_regex' && {
+              regex: err.regex,
+            }),
+          };
+        });
+
+        // Group errors by field for better organization
+        const errorsByField = errors.reduce((acc, error) => {
+          if (!acc[error.field]) {
+            acc[error.field] = [];
+          }
+          acc[error.field].push(error);
+          return acc;
+        }, {});
 
         logger.warn('Body validation failed:', {
           errors,
+          errorsByField,
           body: req.body,
           url: req.url,
+          method: req.method,
         });
 
         return res.status(400).json({
           success: false,
           message: 'Validation failed',
           errors,
+          errorsByField,
           details: {
             totalErrors: errors.length,
             fields: errors.map(e => e.field),
+            fieldCount: Object.keys(errorsByField).length,
+            validationSummary: Object.keys(errorsByField).map(field => ({
+              field,
+              errorCount: errorsByField[field].length,
+              firstError: errorsByField[field][0].message,
+            })),
           },
         });
       }
@@ -114,6 +221,7 @@ export const validateBody = schema => {
         stack: error.stack,
         body: req.body,
         url: req.url,
+        method: req.method,
       });
 
       return res.status(500).json({
@@ -136,26 +244,75 @@ export const validateQuery = schema => {
       const validationResult = schema.safeParse(req.query);
 
       if (!validationResult.success) {
-        const errors = (validationResult.error?.errors || []).map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
-          received: err.input,
-        }));
+        const errors = (validationResult.error?.issues || []).map(err => {
+          const fieldPath = err.path.join('.');
+          const fieldName = err.path[err.path.length - 1];
+
+          return {
+            field: fieldPath,
+            fieldName: fieldName,
+            message: err.message,
+            code: err.code,
+            received: err.input,
+            expected: err.expected,
+            receivedType: typeof err.input,
+            path: err.path,
+            // Add more specific error details based on the error code
+            ...(err.code === 'invalid_type' && {
+              expectedType: err.expected,
+              receivedType: err.received,
+            }),
+            ...(err.code === 'too_small' && {
+              minimum: err.minimum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'too_big' && {
+              maximum: err.maximum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'invalid_string' && {
+              validation: err.validation,
+            }),
+            ...(err.code === 'invalid_enum_value' && {
+              options: err.options,
+            }),
+            ...(err.code === 'invalid_regex' && {
+              regex: err.regex,
+            }),
+          };
+        });
+
+        // Group errors by field for better organization
+        const errorsByField = errors.reduce((acc, error) => {
+          if (!acc[error.field]) {
+            acc[error.field] = [];
+          }
+          acc[error.field].push(error);
+          return acc;
+        }, {});
 
         logger.warn('Query validation failed:', {
           errors,
+          errorsByField,
           query: req.query,
           url: req.url,
+          method: req.method,
         });
 
         return res.status(400).json({
           success: false,
           message: 'Query validation failed',
           errors,
+          errorsByField,
           details: {
             totalErrors: errors.length,
             fields: errors.map(e => e.field),
+            fieldCount: Object.keys(errorsByField).length,
+            validationSummary: Object.keys(errorsByField).map(field => ({
+              field,
+              errorCount: errorsByField[field].length,
+              firstError: errorsByField[field][0].message,
+            })),
           },
         });
       }
@@ -169,6 +326,7 @@ export const validateQuery = schema => {
         stack: error.stack,
         query: req.query,
         url: req.url,
+        method: req.method,
       });
 
       return res.status(500).json({
@@ -194,26 +352,75 @@ export const validateParams = schema => {
         : schema.safeParse(req.params.id);
 
       if (!validationResult.success) {
-        const errors = (validationResult.error?.errors || []).map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-          code: err.code,
-          received: err.input,
-        }));
+        const errors = (validationResult.error?.issues || []).map(err => {
+          const fieldPath = err.path.join('.');
+          const fieldName = err.path[err.path.length - 1];
+
+          return {
+            field: fieldPath,
+            fieldName: fieldName,
+            message: err.message,
+            code: err.code,
+            received: err.input,
+            expected: err.expected,
+            receivedType: typeof err.input,
+            path: err.path,
+            // Add more specific error details based on the error code
+            ...(err.code === 'invalid_type' && {
+              expectedType: err.expected,
+              receivedType: err.received,
+            }),
+            ...(err.code === 'too_small' && {
+              minimum: err.minimum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'too_big' && {
+              maximum: err.maximum,
+              inclusive: err.inclusive,
+            }),
+            ...(err.code === 'invalid_string' && {
+              validation: err.validation,
+            }),
+            ...(err.code === 'invalid_enum_value' && {
+              options: err.options,
+            }),
+            ...(err.code === 'invalid_regex' && {
+              regex: err.regex,
+            }),
+          };
+        });
+
+        // Group errors by field for better organization
+        const errorsByField = errors.reduce((acc, error) => {
+          if (!acc[error.field]) {
+            acc[error.field] = [];
+          }
+          acc[error.field].push(error);
+          return acc;
+        }, {});
 
         logger.warn('Parameter validation failed:', {
           errors,
+          errorsByField,
           params: req.params,
           url: req.url,
+          method: req.method,
         });
 
         return res.status(400).json({
           success: false,
           message: 'Parameter validation failed',
           errors,
+          errorsByField,
           details: {
             totalErrors: errors.length,
             fields: errors.map(e => e.field),
+            fieldCount: Object.keys(errorsByField).length,
+            validationSummary: Object.keys(errorsByField).map(field => ({
+              field,
+              errorCount: errorsByField[field].length,
+              firstError: errorsByField[field][0].message,
+            })),
           },
         });
       }
@@ -227,6 +434,7 @@ export const validateParams = schema => {
         stack: error.stack,
         params: req.params,
         url: req.url,
+        method: req.method,
       });
 
       return res.status(500).json({

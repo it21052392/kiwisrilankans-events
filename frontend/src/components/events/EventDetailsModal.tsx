@@ -148,15 +148,6 @@ export function EventDetailsModal({
                       </div>
                     </div>
                   </div>
-                  {event.registrationDeadline && (
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <span className="font-medium text-sm text-muted-foreground">Registration Deadline:</span>
-                        <div className="text-sm font-medium">{format(new Date(event.registrationDeadline), 'MMM do, yyyy h:mm a')}</div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
