@@ -154,7 +154,23 @@ export default function EventDetailPage() {
             </div>
 
             {/* Event Image */}
-            {event.images && event.images.length > 0 && (
+            {event.images && event.images.length > 0 ? (
+              <div className="aspect-video rounded-lg overflow-hidden">
+                <img 
+                  src={event.images[0].url} 
+                  alt={event.images[0].alt || event.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Hide the image and show placeholder if it fails to load
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-16 w-16 text-primary" />
+                </div>
+              </div>
+            ) : (
               <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                 <Calendar className="h-16 w-16 text-primary" />
               </div>

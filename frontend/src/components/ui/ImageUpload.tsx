@@ -250,6 +250,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const canUpload = images.length < maxImages && !disabled && !isUploading;
+  const isSingleImageMode = maxImages === 1;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -271,7 +272,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <input
               ref={fileInputRef}
               type="file"
-              multiple
+              multiple={!isSingleImageMode}
               accept="image/*"
               onChange={handleFileInputChange}
               className="hidden"
@@ -281,16 +282,25 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <div className="space-y-2">
                 <p className="text-lg font-medium text-gray-900">
-                  {dragActive ? 'Drop images here' : 'Upload images'}
+                  {dragActive 
+                    ? (isSingleImageMode ? 'Drop image here' : 'Drop images here') 
+                    : (isSingleImageMode ? 'Upload image' : 'Upload images')
+                  }
                 </p>
                 <p className="text-sm text-gray-500">
-                  Drag and drop images here, or click to select files
+                  {isSingleImageMode 
+                    ? 'Drag and drop an image here, or click to select a file'
+                    : 'Drag and drop images here, or click to select files'
+                  }
                 </p>
                 <p className="text-xs text-gray-400">
                   Supports: JPG, PNG, WebP, GIF (max {ImageUploadService.formatFileSize(options.maxSize || 5 * 1024 * 1024)})
                 </p>
                 <p className="text-xs text-gray-400">
-                  {images.length}/{maxImages} images uploaded
+                  {isSingleImageMode 
+                    ? (images.length === 0 ? 'No image uploaded' : 'Image uploaded')
+                    : `${images.length}/${maxImages} images uploaded`
+                  }
                 </p>
               </div>
               
@@ -302,7 +312,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 disabled={disabled || isUploading}
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
-                Choose Images
+                {isSingleImageMode ? 'Choose Image' : 'Choose Images'}
               </Button>
             </div>
           </CardContent>
@@ -324,7 +334,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       {showPreview && images.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Uploaded Images</h3>
+            <h3 className="text-lg font-medium">
+              {isSingleImageMode ? 'Uploaded Image' : 'Uploaded Images'}
+            </h3>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
                 {images.length}/{maxImages}
@@ -337,7 +349,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                   disabled={isUploading}
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Clear All
+                  {isSingleImageMode ? 'Remove Image' : 'Clear All'}
                 </Button>
               )}
             </div>
@@ -363,7 +375,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Maximum number of images ({maxImages}) reached. Remove an image to upload more.
+            {isSingleImageMode 
+              ? 'Image uploaded. Remove the current image to upload a different one.'
+              : `Maximum number of images (${maxImages}) reached. Remove an image to upload more.`
+            }
           </AlertDescription>
         </Alert>
       )}

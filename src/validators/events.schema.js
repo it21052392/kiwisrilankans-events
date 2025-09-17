@@ -68,6 +68,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -75,6 +76,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       images: z
         .array(
@@ -90,6 +92,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       tags: z
         .array(
@@ -99,6 +102,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       requirements: z
         .array(
@@ -108,6 +112,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       contactInfo: z
         .object({
@@ -200,6 +205,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -207,6 +213,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       featured: z.boolean().optional(),
       images: z
@@ -223,6 +230,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       tags: z
         .array(
@@ -232,6 +240,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       requirements: z
         .array(
@@ -241,6 +250,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       contactInfo: z
         .object({
@@ -388,6 +398,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -395,6 +406,7 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       currency: z.enum(['NZD', 'USD', 'AUD', 'EUR', 'GBP']).optional(),
       // Organizers cannot change status, featured, or approval fields
@@ -412,6 +424,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       tags: z
         .array(
@@ -421,6 +434,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       requirements: z
         .array(
@@ -430,6 +444,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
+        .max(1, 'Only 1 image allowed per event')
         .optional(),
       contactInfo: z
         .object({

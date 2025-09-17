@@ -476,11 +476,11 @@ export default function EditEventPage() {
             </CardContent>
           </Card>
 
-          {/* Event Images */}
+          {/* Event Image */}
           <EventImageUpload
             images={uploadedImages}
             onImagesChange={handleImagesChange}
-            maxImages={5}
+            maxImages={1}
             disabled={isSubmitting}
             showGuidelines={true}
           />

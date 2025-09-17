@@ -26,19 +26,23 @@ export interface EventImageUploadProps {
   showGuidelines?: boolean;
 }
 
-const ImageGuidelines: React.FC = () => (
+const ImageGuidelines: React.FC<{ isSingleImageMode?: boolean }> = ({ isSingleImageMode = false }) => (
   <Alert className="mb-4">
     <Info className="h-4 w-4" />
     <AlertDescription>
       <div className="space-y-2">
         <p className="font-medium">Image Guidelines:</p>
         <ul className="text-sm space-y-1 list-disc list-inside">
-          <li>Use high-quality images that represent your event well</li>
+          <li>Use a high-quality image that represents your event well</li>
           <li>Recommended size: 1200x800px or similar aspect ratio</li>
           <li>Supported formats: JPG, PNG, WebP, GIF</li>
-          <li>Maximum file size: 5MB per image</li>
-          <li>First image will be used as the primary/cover image</li>
-          <li>Images will be automatically optimized for web display</li>
+          <li>Maximum file size: 5MB</li>
+          {isSingleImageMode ? (
+            <li>This will be your event's main/cover image</li>
+          ) : (
+            <li>First image will be used as the primary/cover image</li>
+          )}
+          <li>Image will be automatically optimized for web display</li>
         </ul>
       </div>
     </AlertDescription>
@@ -75,8 +79,14 @@ export const EventImageUpload: React.FC<EventImageUploadProps> = ({
 }) => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const isSingleImageMode = maxImages === 1;
 
   const handleImagesChange = (newImages: ImageUploadResult[]) => {
+    // For single image mode, only keep the latest image
+    if (isSingleImageMode && newImages.length > 1) {
+      newImages = [newImages[newImages.length - 1]];
+    }
+    
     // Ensure at least one image is marked as primary
     if (newImages.length > 0 && !newImages.some(img => img.isPrimary)) {
       newImages[0].isPrimary = true;
@@ -102,7 +112,7 @@ export const EventImageUpload: React.FC<EventImageUploadProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Camera className="h-5 w-5" />
-          Event Images
+          {isSingleImageMode ? 'Event Image' : 'Event Images'}
           {images.length > 0 && (
             <Badge variant="outline" className="ml-2">
               {images.length}/{maxImages}
@@ -112,7 +122,7 @@ export const EventImageUpload: React.FC<EventImageUploadProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {showGuidelines && <ImageGuidelines />}
+        {showGuidelines && <ImageGuidelines isSingleImageMode={isSingleImageMode} />}
         
         {hasError && (
           <Alert variant="destructive">
@@ -145,8 +155,15 @@ export const EventImageUpload: React.FC<EventImageUploadProps> = ({
         {images.length === 0 && !disabled && (
           <div className="text-center py-8 text-gray-500">
             <Palette className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium mb-2">No images uploaded yet</p>
-            <p className="text-sm">Upload images to make your event more attractive</p>
+            <p className="text-lg font-medium mb-2">
+              {isSingleImageMode ? 'No image uploaded yet' : 'No images uploaded yet'}
+            </p>
+            <p className="text-sm">
+              {isSingleImageMode 
+                ? 'Upload an image to make your event more attractive'
+                : 'Upload images to make your event more attractive'
+              }
+            </p>
           </div>
         )}
       </CardContent>
