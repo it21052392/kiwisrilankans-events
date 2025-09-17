@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
@@ -248,6 +249,111 @@ class UploadService {
     }
   }
 
+  async deleteFileByUrl(url, userId) {
+    try {
+      // Check if AWS credentials are configured
+      if (
+        !env.AWS_ACCESS_KEY_ID ||
+        !env.AWS_SECRET_ACCESS_KEY ||
+        !env.S3_BUCKET_NAME ||
+        !this.s3Client
+      ) {
+        logger.info(
+          `File deletion requested for URL: ${url} by user ${userId} (local development mode)`
+        );
+        return {
+          success: true,
+          message: 'File deletion requested (local development mode)',
+        };
+      }
+
+      // Extract the S3 key from the URL
+      // URL format: https://bucket-name.s3.region.amazonaws.com/key
+      // or https://s3.region.amazonaws.com/bucket-name/key
+      let key;
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/').filter(part => part);
+
+        if (
+          urlObj.hostname.includes('s3.') &&
+          urlObj.hostname.includes('.amazonaws.com')
+        ) {
+          // Format: https://s3.region.amazonaws.com/bucket-name/key
+          key = pathParts.slice(1).join('/');
+        } else if (
+          urlObj.hostname.includes('.s3.') &&
+          urlObj.hostname.includes('.amazonaws.com')
+        ) {
+          // Format: https://bucket-name.s3.region.amazonaws.com/key
+          key = pathParts.join('/');
+        } else {
+          throw new Error('Invalid S3 URL format');
+        }
+      } catch (error) {
+        logger.warn(`Could not parse S3 URL: ${url}`, error);
+        return {
+          success: false,
+          message: 'Invalid S3 URL format',
+        };
+      }
+
+      // Delete from S3
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+
+      logger.info(`File deleted from S3: ${key} by user ${userId}`);
+      return { success: true };
+    } catch (error) {
+      logger.error('Delete file by URL error:', error);
+      throw new Error('Failed to delete file from S3');
+    }
+  }
+
+  async deleteMultipleFilesByUrls(urls, userId) {
+    try {
+      const results = [];
+
+      for (const url of urls) {
+        try {
+          const result = await this.deleteFileByUrl(url, userId);
+          results.push({
+            url,
+            success: result.success,
+            message: result.message,
+          });
+        } catch (error) {
+          logger.error(`Failed to delete file: ${url}`, error);
+          results.push({ url, success: false, message: error.message });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+
+      logger.info(
+        `Bulk delete completed: ${successCount} successful, ${failureCount} failed`
+      );
+
+      return {
+        success: failureCount === 0,
+        results,
+        summary: {
+          total: urls.length,
+          successful: successCount,
+          failed: failureCount,
+        },
+      };
+    } catch (error) {
+      logger.error('Bulk delete files error:', error);
+      throw new Error('Failed to delete multiple files');
+    }
+  }
+
   async getDownloadUrl(id, _userId) {
     try {
       // In a real implementation, you would:
@@ -294,6 +400,38 @@ class UploadService {
     } catch (error) {
       logger.error('Cleanup error:', error);
       throw new Error('Failed to cleanup orphaned files');
+    }
+  }
+
+  async cleanupEventImages(eventId) {
+    try {
+      // Find the event to get its image URLs
+      const { Event } = await import('../models/event.model.js');
+      const event = await Event.findById(eventId);
+
+      if (!event || !event.images || event.images.length === 0) {
+        return {
+          success: true,
+          message: 'No images to clean up',
+          deletedCount: 0,
+        };
+      }
+
+      const imageUrls = event.images.map(img => img.url);
+      const deleteResult = await this.deleteMultipleFilesByUrls(
+        imageUrls,
+        event.createdBy
+      );
+
+      return {
+        success: deleteResult.success,
+        message: `Cleanup completed: ${deleteResult.summary.successful}/${deleteResult.summary.total} images deleted`,
+        deletedCount: deleteResult.summary.successful,
+        results: deleteResult.results,
+      };
+    } catch (error) {
+      logger.error(`Error cleaning up images for event ${eventId}:`, error);
+      throw new Error(`Failed to cleanup event images: ${error.message}`);
     }
   }
 

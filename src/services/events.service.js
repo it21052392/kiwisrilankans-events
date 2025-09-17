@@ -1,6 +1,7 @@
 import { Event } from '../models/event.model.js';
 import { Category } from '../models/category.model.js';
 import { PencilHold } from '../models/pencilHold.model.js';
+import { uploadService } from './uploads.service.js';
 
 class EventService {
   async getEvents({
@@ -195,18 +196,48 @@ class EventService {
   }
 
   async deleteEvent(id) {
-    const event = await Event.findByIdAndDelete(id);
+    const event = await Event.findById(id);
 
     if (!event) {
       throw new Error('Event not found');
     }
 
-    // Update category event count
-    await Category.findByIdAndUpdate(event.category, {
-      $inc: { eventCount: -1 },
-    });
+    try {
+      // Delete associated images from S3
+      if (event.images && event.images.length > 0) {
+        const imageUrls = event.images.map(img => img.url);
+        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+          imageUrls,
+          event.createdBy
+        );
 
-    return event;
+        if (!deleteResult.success) {
+          console.warn(
+            `Some images could not be deleted for event ${id}:`,
+            deleteResult.results
+          );
+        }
+      }
+
+      // Delete associated pencil holds
+      const pencilHoldResult = await PencilHold.deleteMany({ event: id });
+      console.log(
+        `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
+      );
+
+      // Delete the event
+      await Event.findByIdAndDelete(id);
+
+      // Update category event count
+      await Category.findByIdAndUpdate(event.category, {
+        $inc: { eventCount: -1 },
+      });
+
+      return event;
+    } catch (error) {
+      console.error(`Error deleting event ${id}:`, error);
+      throw new Error(`Failed to delete event: ${error.message}`);
+    }
   }
 
   async softDeleteEvent(id, deletedBy) {
@@ -216,9 +247,37 @@ class EventService {
       throw new Error('Event not found');
     }
 
-    await event.softDelete(deletedBy);
+    try {
+      // Delete associated images from S3
+      if (event.images && event.images.length > 0) {
+        const imageUrls = event.images.map(img => img.url);
+        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+          imageUrls,
+          deletedBy
+        );
 
-    return { message: 'Event deleted successfully' };
+        if (!deleteResult.success) {
+          console.warn(
+            `Some images could not be deleted for event ${id}:`,
+            deleteResult.results
+          );
+        }
+      }
+
+      // Delete associated pencil holds
+      const pencilHoldResult = await PencilHold.deleteMany({ event: id });
+      console.log(
+        `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
+      );
+
+      // Soft delete the event
+      await event.softDelete(deletedBy);
+
+      return { message: 'Event deleted successfully' };
+    } catch (error) {
+      console.error(`Error soft deleting event ${id}:`, error);
+      throw new Error(`Failed to delete event: ${error.message}`);
+    }
   }
 
   async restoreEvent(id) {
@@ -268,15 +327,42 @@ class EventService {
       throw new Error('Access denied. You can only delete events you created');
     }
 
-    // Delete the event
-    const deletedEvent = await Event.findByIdAndDelete(id);
+    try {
+      // Delete associated images from S3
+      if (event.images && event.images.length > 0) {
+        const imageUrls = event.images.map(img => img.url);
+        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+          imageUrls,
+          userId
+        );
 
-    // Update category event count
-    await Category.findByIdAndUpdate(deletedEvent.category, {
-      $inc: { eventCount: -1 },
-    });
+        if (!deleteResult.success) {
+          console.warn(
+            `Some images could not be deleted for event ${id}:`,
+            deleteResult.results
+          );
+        }
+      }
 
-    return deletedEvent;
+      // Delete associated pencil holds
+      const pencilHoldResult = await PencilHold.deleteMany({ event: id });
+      console.log(
+        `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
+      );
+
+      // Delete the event
+      const deletedEvent = await Event.findByIdAndDelete(id);
+
+      // Update category event count
+      await Category.findByIdAndUpdate(deletedEvent.category, {
+        $inc: { eventCount: -1 },
+      });
+
+      return deletedEvent;
+    } catch (error) {
+      console.error(`Error deleting event ${id} by organizer:`, error);
+      throw new Error(`Failed to delete event: ${error.message}`);
+    }
   }
 
   async getUpcomingEvents(hours = 24) {
