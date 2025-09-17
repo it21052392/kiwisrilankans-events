@@ -174,7 +174,7 @@ export default function EventDetailPage() {
                         {format(new Date(event.startDate), 'EEEE, MMMM do, yyyy')}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+                        {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
                       </div>
                     </div>
                   </div>

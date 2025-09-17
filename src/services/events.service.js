@@ -31,16 +31,31 @@ class EventService {
 
     // Hide past events by default (only for public view, not for organizer view)
     if (hidePast && !organizerId) {
-      query.endDate = { $gte: new Date() };
+      query.$and = [
+        {
+          $or: [
+            { endDate: { $gte: new Date() } },
+            { endDate: { $exists: false } },
+          ],
+        },
+      ];
     }
 
     // Apply filters
     if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } },
-      ];
+      const searchCondition = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } },
+        ],
+      };
+
+      if (query.$and) {
+        query.$and.push(searchCondition);
+      } else {
+        query.$or = searchCondition.$or;
+      }
     }
 
     if (category) {
@@ -301,7 +316,7 @@ class EventService {
     const query = {
       status: { $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'] }, // Include pencil hold events
       isDeleted: false,
-      endDate: { $gte: new Date() }, // Only future events
+      $or: [{ endDate: { $gte: new Date() } }, { endDate: { $exists: false } }], // Only future events or events without endDate
     };
 
     if (startDate) {
@@ -360,7 +375,7 @@ class EventService {
     const query = {
       status: { $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'] }, // Include pencil hold events
       isDeleted: false,
-      endDate: { $gte: new Date() }, // Only future events
+      $or: [{ endDate: { $gte: new Date() } }, { endDate: { $exists: false } }], // Only future events or events without endDate
     };
 
     if (category) {

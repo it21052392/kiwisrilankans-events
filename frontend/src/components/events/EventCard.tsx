@@ -189,7 +189,7 @@ export function EventCard({
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 mr-2" />
-                {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+                {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-2" />

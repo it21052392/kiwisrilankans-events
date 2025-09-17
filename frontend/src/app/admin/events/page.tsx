@@ -344,7 +344,7 @@ export default function AdminEventsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      <span>{format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}</span>
+                      <span>{format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4" />

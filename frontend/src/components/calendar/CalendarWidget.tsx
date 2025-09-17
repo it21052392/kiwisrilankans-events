@@ -397,7 +397,7 @@ export function CalendarWidget({
                                         <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
                                       </div>
                                       <div className="text-muted-foreground truncate hidden sm:block">
-                                        {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                        {formatEventTime(event.startDate)}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
                                       </div>
                                       {/* Status Indicator */}
                                       {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (

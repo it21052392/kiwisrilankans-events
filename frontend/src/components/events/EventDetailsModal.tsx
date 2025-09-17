@@ -143,7 +143,7 @@ export function EventDetailsModal({
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm text-muted-foreground">Time:</span>
                       <div className="text-sm font-medium">
-                        {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+                        {format(new Date(event.startDate), 'h:mm a')}{event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
                       </div>
                     </div>
                   </div>
