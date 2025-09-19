@@ -90,12 +90,12 @@ cd ..
 
 # Stop existing PM2 processes
 print_status "Stopping existing PM2 processes..."
-pm2 stop ecosystem.config.js 2>/dev/null || true
-pm2 delete ecosystem.config.js 2>/dev/null || true
+pm2 stop ecosystem.config.cjs 2>/dev/null || true
+pm2 delete ecosystem.config.cjs 2>/dev/null || true
 
 # Start applications with PM2
 print_status "Starting applications with PM2..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 
 # Save PM2 configuration
 print_status "Saving PM2 configuration..."

@@ -98,15 +98,15 @@ if (!$SkipBuild) {
 # Stop existing PM2 processes
 Write-Status "Stopping existing PM2 processes..."
 try {
-    pm2 stop ecosystem.config.js 2>$null
-    pm2 delete ecosystem.config.js 2>$null
+    pm2 stop ecosystem.config.cjs 2>$null
+    pm2 delete ecosystem.config.cjs 2>$null
 } catch {
     # Ignore errors if processes don't exist
 }
 
 # Start applications with PM2
 Write-Status "Starting applications with PM2..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 
 # Save PM2 configuration
 Write-Status "Saving PM2 configuration..."
