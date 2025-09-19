@@ -43,9 +43,7 @@ export default function AdminDashboard() {
 
   // Fetch users
   const { data: usersData, isLoading: usersLoading } = useUsers({
-    limit: 5,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
+    limit: 5
   });
 
   // Fetch categories
