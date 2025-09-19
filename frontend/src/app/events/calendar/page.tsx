@@ -50,6 +50,16 @@ export default function CalendarPage() {
   const eventsByDate = eventsData?.data?.eventsByDate || {};
   const categories = categoriesData?.data?.categories || [];
 
+  // Debug logging
+  console.log('Calendar Debug:', {
+    eventsData,
+    events,
+    eventsByDate,
+    eventsLoading,
+    eventsError,
+    debouncedFilters
+  });
+
   const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   }, []);
@@ -95,13 +105,13 @@ export default function CalendarPage() {
     return weekDates;
   };
 
-  // Get time slots (1 AM to 11 PM)
+  // Get time slots (12 AM to 11 PM)
   const getTimeSlots = () => {
     const slots = [];
-    for (let hour = 1; hour <= 23; hour++) {
+    for (let hour = 0; hour <= 23; hour++) {
       slots.push({
         hour,
-        label: hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
+        label: hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
         time: `${hour.toString().padStart(2, '0')}:00`
       });
     }
@@ -114,22 +124,11 @@ export default function CalendarPage() {
     const dayEvents = eventsByDate[dateString] || [];
     
     return dayEvents.filter(event => {
-      // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
-      let eventStartHour, eventEndHour;
-      
-      if (event.startTime && event.endTime) {
-        // Parse time strings like "08:00" and "12:00"
-        const [startHour] = event.startTime.split(':').map(Number);
-        const [endHour] = event.endTime.split(':').map(Number);
-        eventStartHour = startHour;
-        eventEndHour = endHour;
-      } else {
-        // Fallback to using startDate and endDate
-        const eventStart = new Date(event.startDate);
-        const eventEnd = new Date(event.endDate);
-        eventStartHour = eventStart.getHours();
-        eventEndHour = eventEnd.getHours();
-      }
+      // Use startDate and endDate to determine time
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      const eventStartHour = eventStart.getHours();
+      const eventEndHour = eventEnd.getHours();
       
       // Check if event overlaps with this time slot (hour to hour+1)
       // Event starts before or during this hour AND ends after this hour starts
@@ -155,27 +154,11 @@ export default function CalendarPage() {
     let lastEndTime = 0;
 
     sortedEvents.forEach(event => {
-      // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
-      let startTime, endTime;
-      
-      if (event.startTime && event.endTime) {
-        // Parse time strings like "08:00" and "12:00"
-        const [startHour, startMin] = event.startTime.split(':').map(Number);
-        const [endHour, endMin] = event.endTime.split(':').map(Number);
-        const eventDate = new Date(event.startDate);
-        const eventStart = new Date(eventDate);
-        eventStart.setHours(startHour, startMin, 0, 0);
-        const eventEnd = new Date(eventDate);
-        eventEnd.setHours(endHour, endMin, 0, 0);
-        startTime = eventStart.getTime();
-        endTime = eventEnd.getTime();
-      } else {
-        // Fallback to using startDate and endDate
-        const eventStart = new Date(event.startDate);
-        const eventEnd = new Date(event.endDate);
-        startTime = eventStart.getTime();
-        endTime = eventEnd.getTime();
-      }
+      // Use startDate and endDate to determine time
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      const startTime = eventStart.getTime();
+      const endTime = eventEnd.getTime();
 
       if (startTime < lastEndTime) {
         // Event overlaps with current group
@@ -199,26 +182,13 @@ export default function CalendarPage() {
 
   // Calculate event position and height with overlap handling
   const getEventPosition = (event: any, hour: number, groupIndex: number = 0, groupSize: number = 1) => {
-    // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
-    let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
-    
-    if (event.startTime && event.endTime) {
-      // Parse time strings like "08:00" and "12:00"
-      const [startHour, startMin] = event.startTime.split(':').map(Number);
-      const [endHour, endMin] = event.endTime.split(':').map(Number);
-      eventStartHour = startHour;
-      eventStartMinute = startMin;
-      eventEndHour = endHour;
-      eventEndMinute = endMin;
-    } else {
-      // Fallback to using startDate and endDate
-      const eventStart = new Date(event.startDate);
-      const eventEnd = new Date(event.endDate);
-      eventStartHour = eventStart.getHours();
-      eventStartMinute = eventStart.getMinutes();
-      eventEndHour = eventEnd.getHours();
-      eventEndMinute = eventEnd.getMinutes();
-    }
+    // Use startDate and endDate to determine time
+    const eventStart = new Date(event.startDate);
+    const eventEnd = new Date(event.endDate);
+    const eventStartHour = eventStart.getHours();
+    const eventStartMinute = eventStart.getMinutes();
+    const eventEndHour = eventEnd.getHours();
+    const eventEndMinute = eventEnd.getMinutes();
     
     const startTimeInHours = eventStartHour + (eventStartMinute / 60);
     const endTimeInHours = eventEndHour + (eventEndMinute / 60);
@@ -258,8 +228,24 @@ export default function CalendarPage() {
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    return eventsByDate[dateString] || [];
+    // Use local date string to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    const dayEvents = eventsByDate[dateString] || [];
+    
+    // Debug logging for date matching
+    console.log('getEventsForDate Debug:', {
+      date,
+      dateString,
+      dayEvents,
+      eventsByDateKeys: Object.keys(eventsByDate),
+      allEvents: events
+    });
+    
+    return dayEvents;
   };
 
   const isToday = (date: Date) => {
@@ -382,6 +368,15 @@ export default function CalendarPage() {
   useEffect(() => {
     setDebouncedFilters(prev => ({ ...prev, category: filters.category }));
   }, [filters.category]);
+
+  // Debounce search filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(prev => ({ ...prev, search: filters.search }));
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filters.search]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -764,33 +759,20 @@ export default function CalendarPage() {
                         {/* Events container - positioned absolutely over the grid */}
                         <div className="absolute inset-0 pointer-events-none">
                           {getEventsForDate(date).map((event, eventIndex) => {
-                            // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
-                            let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
-                            
-                            if (event.startTime && event.endTime) {
-                              // Parse time strings like "08:00" and "12:00"
-                              const [startHour, startMin] = event.startTime.split(':').map(Number);
-                              const [endHour, endMin] = event.endTime.split(':').map(Number);
-                              eventStartHour = startHour;
-                              eventStartMinute = startMin;
-                              eventEndHour = endHour;
-                              eventEndMinute = endMin;
-                            } else {
-                              // Fallback to using startDate and endDate
-                              const eventStart = new Date(event.startDate);
-                              const eventEnd = new Date(event.endDate);
-                              eventStartHour = eventStart.getHours();
-                              eventStartMinute = eventStart.getMinutes();
-                              eventEndHour = eventEnd.getHours();
-                              eventEndMinute = eventEnd.getMinutes();
-                            }
+                            // Use startDate and endDate to determine time
+                            const eventStart = new Date(event.startDate);
+                            const eventEnd = new Date(event.endDate);
+                            const eventStartHour = eventStart.getHours();
+                            const eventStartMinute = eventStart.getMinutes();
+                            const eventEndHour = eventEnd.getHours();
+                            const eventEndMinute = eventEnd.getMinutes();
                             
                             const startTimeInHours = eventStartHour + (eventStartMinute / 60);
                             const endTimeInHours = eventEndHour + (eventEndMinute / 60);
                             const durationInHours = endTimeInHours - startTimeInHours;
                             
-                            // Calculate position from the top of the day (not relative to a specific hour)
-                            const top = (startTimeInHours - 1) * 48 + 'px'; // 48px per hour, starting from 1 AM
+                            // Calculate position from the top of the day (starting from 12 AM)
+                            const top = startTimeInHours * 48 + 'px'; // 48px per hour, starting from 12 AM
                             const height = durationInHours * 48 + 'px';
                             
                             return (

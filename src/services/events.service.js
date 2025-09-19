@@ -408,9 +408,18 @@ class EventService {
 
   async getEventsForCalendar({ startDate, endDate, category, search }) {
     const query = {
-      status: { $in: ['published', 'pencil_hold', 'pencil_hold_confirmed'] }, // Include pencil hold events
+      status: {
+        $in: [
+          'published',
+          'pencil_hold',
+          'pencil_hold_confirmed',
+          'draft',
+          'pending_approval',
+        ],
+      }, // Include more event statuses for testing
       isDeleted: false,
-      $or: [{ endDate: { $gte: new Date() } }, { endDate: { $exists: false } }], // Only future events or events without endDate
+      // Remove the future events filter for now to see all events
+      // $or: [{ endDate: { $gte: new Date() } }, { endDate: { $exists: false } }], // Only future events or events without endDate
     };
 
     if (startDate) {
@@ -441,10 +450,27 @@ class EventService {
       )
       .sort({ startDate: 1 });
 
+    // Debug logging
+    console.log('Calendar Events Debug:', {
+      query,
+      eventsCount: events.length,
+      events: events.map(e => ({
+        id: e._id,
+        title: e.title,
+        startDate: e.startDate,
+        status: e.status,
+      })),
+    });
+
     // Group events by date for calendar view
     const eventsByDate = {};
     events.forEach(event => {
-      const dateKey = event.startDate.toISOString().split('T')[0];
+      // Use local date formatting to avoid timezone issues
+      const year = event.startDate.getFullYear();
+      const month = String(event.startDate.getMonth() + 1).padStart(2, '0');
+      const day = String(event.startDate.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+
       if (!eventsByDate[dateKey]) {
         eventsByDate[dateKey] = [];
       }

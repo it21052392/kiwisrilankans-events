@@ -83,13 +83,13 @@ export function CalendarWidget({
     return weekDates;
   };
 
-  // Get time slots (1 AM to 11 PM)
+  // Get time slots (12 AM to 11 PM)
   const getTimeSlots = () => {
     const slots = [];
-    for (let hour = 1; hour <= 23; hour++) {
+    for (let hour = 0; hour <= 23; hour++) {
       slots.push({
         hour,
-        label: hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
+        label: hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
         time: `${hour.toString().padStart(2, '0')}:00`
       });
     }
@@ -121,7 +121,12 @@ export function CalendarWidget({
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    // Use local date string to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
     return eventsByDate[dateString] || [];
   };
 
@@ -364,33 +369,20 @@ export function CalendarWidget({
                           {getEventsForDate(date)
                             .slice(0, 6) // Limit to 6 events per day for widget
                             .map((event, eventIndex) => {
-                              // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
-                              let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
-                              
-                              if (event.startTime && event.endTime) {
-                                // Parse time strings like "08:00" and "12:00"
-                                const [startHour, startMin] = event.startTime.split(':').map(Number);
-                                const [endHour, endMin] = event.endTime.split(':').map(Number);
-                                eventStartHour = startHour;
-                                eventStartMinute = startMin;
-                                eventEndHour = endHour;
-                                eventEndMinute = endMin;
-                              } else {
-                                // Fallback to using startDate and endDate
-                                const eventStart = new Date(event.startDate);
-                                const eventEnd = new Date(event.endDate);
-                                eventStartHour = eventStart.getHours();
-                                eventStartMinute = eventStart.getMinutes();
-                                eventEndHour = eventEnd.getHours();
-                                eventEndMinute = eventEnd.getMinutes();
-                              }
+                              // Use startDate and endDate to determine time
+                              const eventStart = new Date(event.startDate);
+                              const eventEnd = new Date(event.endDate);
+                              const eventStartHour = eventStart.getHours();
+                              const eventStartMinute = eventStart.getMinutes();
+                              const eventEndHour = eventEnd.getHours();
+                              const eventEndMinute = eventEnd.getMinutes();
                               
                               const startTimeInHours = eventStartHour + (eventStartMinute / 60);
                               const endTimeInHours = eventEndHour + (eventEndMinute / 60);
                               const durationInHours = endTimeInHours - startTimeInHours;
                               
-                              // Calculate position from the top of the day (not relative to a specific hour)
-                              const top = (startTimeInHours - 1) * 48 + 'px'; // 48px per hour, starting from 1 AM
+                              // Calculate position from the top of the day (starting from 12 AM)
+                              const top = startTimeInHours * 48 + 'px'; // 48px per hour, starting from 12 AM
                               const height = durationInHours * 48 + 'px';
                                 
                                 return (

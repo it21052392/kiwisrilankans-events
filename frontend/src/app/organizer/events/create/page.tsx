@@ -203,10 +203,10 @@ export default function CreateEventPage() {
   };
 
   const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+    if (newTag.trim() && !formData.tags?.includes(newTag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...(prev.tags || []), newTag.trim()]
       }));
       setNewTag('');
     }
@@ -215,15 +215,15 @@ export default function CreateEventPage() {
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
     }));
   };
 
   const addRequirement = () => {
-    if (newRequirement.trim() && !formData.requirements.includes(newRequirement.trim())) {
+    if (newRequirement.trim() && !formData.requirements?.includes(newRequirement.trim())) {
       setFormData(prev => ({
         ...prev,
-        requirements: [...prev.requirements, newRequirement.trim()]
+        requirements: [...(prev.requirements || []), newRequirement.trim()]
       }));
       setNewRequirement('');
     }
@@ -232,7 +232,7 @@ export default function CreateEventPage() {
   const removeRequirement = (requirementToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      requirements: prev.requirements.filter(req => req !== requirementToRemove)
+      requirements: (prev.requirements || []).filter(req => req !== requirementToRemove)
     }));
   };
 
@@ -243,7 +243,7 @@ export default function CreateEventPage() {
       images: images.map(img => ({
         url: img.url,
         alt: img.originalName,
-        isPrimary: img.isPrimary
+        isPrimary: false // ImageUploadResult doesn't have isPrimary property
       }))
     }));
   };
@@ -573,9 +573,9 @@ export default function CreateEventPage() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              {formData.tags.length > 0 && (
+              {(formData.tags || []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
+                  {(formData.tags || []).map((tag) => (
                     <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                       {tag}
                       <button
@@ -616,9 +616,9 @@ export default function CreateEventPage() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              {formData.requirements.length > 0 && (
+              {(formData.requirements || []).length > 0 && (
                 <div className="space-y-2">
-                  {formData.requirements.map((requirement, index) => (
+                  {(formData.requirements || []).map((requirement, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <span className="text-sm">• {requirement}</span>
                       <button

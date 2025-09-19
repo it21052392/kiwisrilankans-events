@@ -68,9 +68,9 @@ export default function EditEventPage() {
     capacity: 50,
     price: 0,
     currency: 'NZD',
-    images: [],
-    tags: [],
-    requirements: [],
+    images: [] as Array<{ url: string; alt: string; isPrimary: boolean }>,
+    tags: [] as string[],
+    requirements: [] as string[],
     contactInfo: {
       name: user?.name || '',
       email: user?.email || '',
@@ -95,28 +95,10 @@ export default function EditEventPage() {
     if (eventData?.data?.event) {
       const event = eventData.data.event;
       
-      // Helper function to combine date and time fields
-      const combineDateTime = (dateField: string, timeField: string) => {
+      // Helper function to format date for datetime-local input
+      const formatDateForInput = (dateField: string) => {
         if (!dateField) return '';
         const date = new Date(dateField);
-        if (timeField) {
-          const [hours, minutes] = timeField.split(':').map(Number);
-          // Use UTC methods to avoid timezone conversion
-          date.setUTCHours(hours, minutes, 0, 0);
-        }
-        return date.toISOString().slice(0, 16);
-      };
-
-      // Helper function to combine date and time fields, using startDate as fallback for endDate
-      const combineDateTimeWithFallback = (dateField: string, timeField: string, fallbackDate?: string) => {
-        const dateToUse = dateField || fallbackDate;
-        if (!dateToUse) return '';
-        const date = new Date(dateToUse);
-        if (timeField) {
-          const [hours, minutes] = timeField.split(':').map(Number);
-          // Use UTC methods to avoid timezone conversion
-          date.setUTCHours(hours, minutes, 0, 0);
-        }
         return date.toISOString().slice(0, 16);
       };
       
@@ -124,8 +106,8 @@ export default function EditEventPage() {
         title: event.title || '',
         description: event.description || '',
         category: event.category?._id || '',
-        startDate: combineDateTime(event.startDate, event.startTime),
-        endDate: combineDateTimeWithFallback(event.endDate, event.endTime, event.startDate),
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -158,7 +140,7 @@ export default function EditEventPage() {
           size: 0, // Unknown size for existing images
           type: 'image/jpeg', // Default type
           uploadType: 'event_image',
-          uploadedBy: user?._id || '',
+          uploadedBy: user?.id || '',
           uploadedAt: new Date().toISOString(),
           isPrimary: img.isPrimary || index === 0
         }));
@@ -322,7 +304,7 @@ export default function EditEventPage() {
       images: images.map(img => ({
         url: img.url,
         alt: img.originalName,
-        isPrimary: img.isPrimary
+        isPrimary: false // ImageUploadResult doesn't have isPrimary property
       }))
     }));
   };
@@ -335,25 +317,11 @@ export default function EditEventPage() {
 
     setIsSubmitting(true);
     try {
-      // Helper function to split datetime-local into date and time fields
-      const splitDateTime = (dateTimeString: string) => {
-        if (!dateTimeString) return { date: '', time: '' };
-        const date = new Date(dateTimeString);
-        const dateStr = date.toISOString().split('T')[0];
-        const timeStr = dateTimeString.split('T')[1] || '';
-        return { date: dateStr, time: timeStr };
-      };
-
-      // Split datetime fields into separate date and time components
-      const startDateTime = splitDateTime(formData.startDate);
-      const endDateTime = splitDateTime(formData.endDate);
       // Format dates to include timezone information for backend validation
       const eventData = {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
-        startTime: startDateTime.time,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.startDate, // Use startDate as fallback
-        endTime: endDateTime.time,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
       };
 
       await updateEventMutation.mutateAsync({

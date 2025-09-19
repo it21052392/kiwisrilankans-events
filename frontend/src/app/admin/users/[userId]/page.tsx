@@ -86,13 +86,20 @@ export default function UserDetailPage() {
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
-        }
-      }));
+      setFormData(prev => {
+        const parentValue = prev[parent as keyof typeof prev];
+        const parentObject = parentValue && typeof parentValue === 'object' && parentValue !== null 
+          ? parentValue as Record<string, any>
+          : {};
+        
+        return {
+          ...prev,
+          [parent]: {
+            ...parentObject,
+            [child]: value
+          }
+        };
+      });
     } else {
       setFormData(prev => ({
         ...prev,

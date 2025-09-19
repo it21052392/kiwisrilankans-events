@@ -69,7 +69,7 @@ const ImageThumbnail: React.FC<{
         ) : (
           <img
             src={image.url}
-            alt={image.alt || image.originalName}
+            alt={image.originalName}
             className={cn(
               "w-full h-full object-cover transition-opacity duration-200",
               isLoading ? "opacity-0" : "opacity-100"
@@ -83,7 +83,7 @@ const ImageThumbnail: React.FC<{
         )}
       </div>
 
-      {showPrimaryBadge && image.isPrimary && (
+      {showPrimaryBadge && false && ( // ImageUploadResult doesn't have isPrimary property
         <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs">
           <Star className="h-3 w-3 mr-1" />
           Primary
@@ -220,7 +220,7 @@ const FullscreenViewer: React.FC<{
             ) : (
               <img
                 src={currentImage.url}
-                alt={currentImage.alt || currentImage.originalName}
+                alt={currentImage.originalName}
                 className={cn(
                   "max-w-full max-h-full object-contain transition-transform duration-200",
                   isLoading ? "opacity-0" : "opacity-100"

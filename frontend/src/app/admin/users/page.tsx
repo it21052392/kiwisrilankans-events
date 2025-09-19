@@ -88,7 +88,7 @@ export default function AdminUsersPage() {
 
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
     try {
-      await usersService.updateUser(userId, { role: newRole });
+      await usersService.updateUser(userId, { role: newRole as 'organizer' | 'admin' });
       toast.success('User role updated successfully');
       refetch();
     } catch (error) {

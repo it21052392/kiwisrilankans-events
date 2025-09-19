@@ -56,9 +56,6 @@ export default function TestImageUploadPage() {
               maxImages={5}
               disabled={false}
               showGuidelines={true}
-              onUploadStart={handleUploadStart}
-              onUploadComplete={handleUploadComplete}
-              onUploadError={handleUploadError}
             />
           </CardContent>
         </Card>

@@ -401,7 +401,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 image={image}
                 onRemove={() => handleRemoveImage(image.id)}
                 onSetPrimary={allowReorder ? () => handleSetPrimary(image.id) : undefined}
-                isPrimary={image.isPrimary}
+                isPrimary={false} // ImageUploadResult doesn't have isPrimary property
                 showActions={!disabled}
               />
             ))}

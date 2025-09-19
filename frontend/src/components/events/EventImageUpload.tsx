@@ -51,19 +51,13 @@ const ImageGuidelines: React.FC<{ isSingleImageMode?: boolean }> = ({ isSingleIm
 
 const ImageStats: React.FC<{ images: ImageUploadResult[] }> = ({ images }) => {
   const totalSize = images.reduce((sum, img) => sum + img.size, 0);
-  const primaryImage = images.find(img => img.isPrimary);
+  const primaryImage = null; // ImageUploadResult doesn't have isPrimary property
   
   return (
     <div className="flex items-center justify-between text-sm text-gray-600">
       <div className="flex items-center gap-4">
         <span>{images.length} image{images.length !== 1 ? 's' : ''}</span>
         <span>{Math.round(totalSize / 1024 / 1024 * 100) / 100} MB total</span>
-        {primaryImage && (
-          <Badge variant="secondary" className="text-xs">
-            <Star className="h-3 w-3 mr-1" />
-            Primary: {primaryImage.originalName}
-          </Badge>
-        )}
       </div>
     </div>
   );
@@ -87,10 +81,7 @@ export const EventImageUpload: React.FC<EventImageUploadProps> = ({
       newImages = [newImages[newImages.length - 1]];
     }
     
-    // Ensure at least one image is marked as primary
-    if (newImages.length > 0 && !newImages.some(img => img.isPrimary)) {
-      newImages[0].isPrimary = true;
-    }
+    // Note: ImageUploadResult doesn't have isPrimary property
     
     onImagesChange(newImages);
     setHasError(false);

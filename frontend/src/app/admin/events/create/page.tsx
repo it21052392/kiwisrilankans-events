@@ -147,10 +147,10 @@ export default function AdminCreateEventPage() {
   };
 
   const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+    if (newTag.trim() && !formData.tags?.includes(newTag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...(prev.tags || []), newTag.trim()]
       }));
       setNewTag('');
     }
@@ -159,15 +159,15 @@ export default function AdminCreateEventPage() {
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
     }));
   };
 
   const addRequirement = () => {
-    if (newRequirement.trim() && !formData.requirements.includes(newRequirement.trim())) {
+    if (newRequirement.trim() && !formData.requirements?.includes(newRequirement.trim())) {
       setFormData(prev => ({
         ...prev,
-        requirements: [...prev.requirements, newRequirement.trim()]
+        requirements: [...(prev.requirements || []), newRequirement.trim()]
       }));
       setNewRequirement('');
     }
@@ -176,7 +176,7 @@ export default function AdminCreateEventPage() {
   const removeRequirement = (requirementToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      requirements: prev.requirements.filter(req => req !== requirementToRemove)
+      requirements: (prev.requirements || []).filter(req => req !== requirementToRemove)
     }));
   };
 
@@ -513,7 +513,7 @@ export default function AdminCreateEventPage() {
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
+                    {(formData.tags || []).map((tag) => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                         {tag}
                         <button
@@ -543,7 +543,7 @@ export default function AdminCreateEventPage() {
                     </Button>
                   </div>
                   <div className="space-y-1">
-                    {formData.requirements.map((requirement) => (
+                    {(formData.requirements || []).map((requirement) => (
                       <div key={requirement} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                         <span className="text-sm">{requirement}</span>
                         <X 

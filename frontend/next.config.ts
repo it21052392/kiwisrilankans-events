@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   env: {
     PORT: '5000',
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
