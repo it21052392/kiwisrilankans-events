@@ -28,9 +28,9 @@ import {
 import Link from 'next/link';
 import { useAdminEvents, useApproveEvent, useRejectEvent } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
-import { EventDetailsModal } from '@/components/events/EventDetailsModal';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDateShort } from '@/lib/time-utils';
 
 export default function AdminEventsPage() {
   const router = useRouter();
@@ -38,8 +38,6 @@ export default function AdminEventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Fetch all events for admin
   const { data: eventsData, isLoading: eventsLoading, refetch } = useAdminEvents({
@@ -62,7 +60,7 @@ export default function AdminEventsPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const allEvents = eventsData?.data?.events || [];
   const categories = categoriesData?.data?.categories || [];
@@ -76,20 +74,14 @@ export default function AdminEventsPage() {
   });
 
   const handleViewDetails = (event: any) => {
-    setSelectedEvent(event);
-    setIsDetailsModalOpen(true);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedEvent(null);
-    setIsDetailsModalOpen(false);
+    router.push(`/admin/events/${event._id}/view`);
   };
 
   const handleApproveEvent = async (eventId: string) => {
     try {
       await approveEventMutation.mutateAsync(eventId);
       toast.success('Event approved successfully');
-      handleCloseDetails();
+      refetch(); // Refresh the events list
     } catch (error) {
       console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
@@ -100,7 +92,7 @@ export default function AdminEventsPage() {
     try {
       await rejectEventMutation.mutateAsync({ id: eventId, reason });
       toast.success('Event rejected successfully');
-      handleCloseDetails();
+      refetch(); // Refresh the events list
     } catch (error) {
       console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');
@@ -340,11 +332,11 @@ export default function AdminEventsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(event.startDate), 'MMM do, yyyy')}</span>
+                      <span>{formatEventDateShort(event)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      <span>{format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}</span>
+                      <span>{formatEventTime(event)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4" />
@@ -423,16 +415,6 @@ export default function AdminEventsPage() {
           </Card>
         )}
 
-        {/* Event Details Modal */}
-        <EventDetailsModal
-          event={selectedEvent}
-          isOpen={isDetailsModalOpen}
-          onClose={handleCloseDetails}
-          onApprove={handleApproveEvent}
-          onReject={handleRejectEvent}
-          isApproving={approveEventMutation.isPending}
-          isRejecting={rejectEventMutation.isPending}
-        />
       </div>
     </AdminLayout>
   );

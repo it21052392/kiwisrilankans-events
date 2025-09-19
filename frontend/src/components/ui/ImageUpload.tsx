@@ -54,8 +54,20 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  console.log('ImagePreview props:', {
+    imageId: image.id,
+    showActions,
+    isPrimary,
+    hasOnRemove: !!onRemove,
+    hasOnSetPrimary: !!onSetPrimary
+  });
+
   return (
-    <div className="relative group">
+    <div 
+      className="relative group"
+      onMouseEnter={() => console.log('Mouse enter on image:', image.id)}
+      onMouseLeave={() => console.log('Mouse leave on image:', image.id)}
+    >
       <div className="aspect-video rounded-lg overflow-hidden border bg-gray-50">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -90,12 +102,21 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       )}
 
       {showActions && (
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+        <div 
+          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2"
+          onMouseEnter={() => console.log('Mouse enter on actions overlay for image:', image.id)}
+        >
           <Button
             size="sm"
             variant="secondary"
-            onClick={() => window.open(image.url, '_blank')}
-            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('View button clicked for image:', image.id);
+              window.open(image.url, '_blank');
+            }}
+            className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
+            style={{ zIndex: 10 }}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -103,8 +124,14 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             <Button
               size="sm"
               variant="secondary"
-              onClick={onSetPrimary}
-              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Set primary button clicked for image:', image.id);
+                onSetPrimary();
+              }}
+              className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
+              style={{ zIndex: 10 }}
             >
               <CheckCircle2 className="h-4 w-4" />
             </Button>
@@ -112,8 +139,14 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
           <Button
             size="sm"
             variant="destructive"
-            onClick={onRemove}
-            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Delete button clicked for image:', image.id);
+              onRemove();
+            }}
+            className="h-8 w-8 p-0 bg-red-500 hover:bg-red-600 text-white"
+            style={{ zIndex: 10 }}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -150,7 +183,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   // Update parent when images change
   useEffect(() => {
     onImagesChange(images);
-  }, [images, onImagesChange]);
+  }, [images]); // Removed onImagesChange from dependencies to prevent infinite loops
 
   const handleImageUpload = useCallback(async (files: File[]) => {
     if (disabled || isUploading) return;
@@ -191,11 +224,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleRemoveImage = useCallback(async (imageId: string) => {
     try {
+      console.log('Attempting to delete image with ID:', imageId);
+      console.log('Current images:', images);
+      
       await ImageUploadService.deleteImage(imageId);
       const newImages = images.filter(img => img.id !== imageId);
+      console.log('New images after deletion:', newImages);
+      
       setImages(newImages);
       toast.success('Image removed successfully');
     } catch (error) {
+      console.error('Error deleting image:', error);
       toast.error('Failed to remove image');
     }
   }, [images]);
@@ -250,6 +289,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const canUpload = images.length < maxImages && !disabled && !isUploading;
+  const isSingleImageMode = maxImages === 1;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -271,7 +311,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             <input
               ref={fileInputRef}
               type="file"
-              multiple
+              multiple={!isSingleImageMode}
               accept="image/*"
               onChange={handleFileInputChange}
               className="hidden"
@@ -281,16 +321,25 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <div className="space-y-2">
                 <p className="text-lg font-medium text-gray-900">
-                  {dragActive ? 'Drop images here' : 'Upload images'}
+                  {dragActive 
+                    ? (isSingleImageMode ? 'Drop image here' : 'Drop images here') 
+                    : (isSingleImageMode ? 'Upload image' : 'Upload images')
+                  }
                 </p>
                 <p className="text-sm text-gray-500">
-                  Drag and drop images here, or click to select files
+                  {isSingleImageMode 
+                    ? 'Drag and drop an image here, or click to select a file'
+                    : 'Drag and drop images here, or click to select files'
+                  }
                 </p>
                 <p className="text-xs text-gray-400">
                   Supports: JPG, PNG, WebP, GIF (max {ImageUploadService.formatFileSize(options.maxSize || 5 * 1024 * 1024)})
                 </p>
                 <p className="text-xs text-gray-400">
-                  {images.length}/{maxImages} images uploaded
+                  {isSingleImageMode 
+                    ? (images.length === 0 ? 'No image uploaded' : 'Image uploaded')
+                    : `${images.length}/${maxImages} images uploaded`
+                  }
                 </p>
               </div>
               
@@ -302,7 +351,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                 disabled={disabled || isUploading}
               >
                 <ImageIcon className="h-4 w-4 mr-2" />
-                Choose Images
+                {isSingleImageMode ? 'Choose Image' : 'Choose Images'}
               </Button>
             </div>
           </CardContent>
@@ -324,7 +373,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       {showPreview && images.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Uploaded Images</h3>
+            <h3 className="text-lg font-medium">
+              {isSingleImageMode ? 'Uploaded Image' : 'Uploaded Images'}
+            </h3>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
                 {images.length}/{maxImages}
@@ -337,7 +388,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                   disabled={isUploading}
                 >
                   <X className="h-4 w-4 mr-2" />
-                  Clear All
+                  {isSingleImageMode ? 'Remove Image' : 'Clear All'}
                 </Button>
               )}
             </div>
@@ -363,7 +414,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Maximum number of images ({maxImages}) reached. Remove an image to upload more.
+            {isSingleImageMode 
+              ? 'Image uploaded. Remove the current image to upload a different one.'
+              : `Maximum number of images (${maxImages}) reached. Remove an image to upload more.`
+            }
           </AlertDescription>
         </Alert>
       )}

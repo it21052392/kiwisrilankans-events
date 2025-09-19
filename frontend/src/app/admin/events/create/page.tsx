@@ -28,6 +28,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
+import { useCreateEvent } from '@/hooks/queries/useEvents';
 import { eventsService, CreateEventData } from '@/services/events.service';
 import toast from 'react-hot-toast';
 
@@ -39,6 +40,9 @@ export default function AdminCreateEventPage() {
   
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  
+  // Mutations
+  const createEventMutation = useCreateEvent();
 
   // Form state
   const [formData, setFormData] = useState<CreateEventData>({
@@ -47,7 +51,6 @@ export default function AdminCreateEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -79,7 +82,7 @@ export default function AdminCreateEventPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -105,12 +108,9 @@ export default function AdminCreateEventPage() {
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.endDate = 'End date must be after start date';
+      newErrors.endDate = 'End date must be on or after start date';
     }
 
-    if (formData.registrationDeadline && formData.startDate && new Date(formData.registrationDeadline) > new Date(formData.startDate)) {
-      newErrors.registrationDeadline = 'Registration deadline must be before start date';
-    }
 
     if (!formData.location.name.trim()) {
       newErrors.locationName = 'Location name is required';
@@ -193,7 +193,7 @@ export default function AdminCreateEventPage() {
         status: status === 'published' ? 'published' : 'draft' // Admin can directly publish
       };
 
-      const response = await eventsService.createEvent(eventData);
+      const response = await createEventMutation.mutateAsync(eventData);
       
       if (response.success) {
         toast.success(`Event ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
@@ -244,9 +244,9 @@ export default function AdminCreateEventPage() {
             <Button 
               variant="outline" 
               onClick={() => handleSubmit('draft')}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
-              {isSubmitting ? (
+              {(isSubmitting || createEventMutation.isPending) ? (
                 <LoadingSpinner size="sm" />
               ) : (
                 <>
@@ -257,9 +257,9 @@ export default function AdminCreateEventPage() {
             </Button>
             <Button 
               onClick={() => handleSubmit('published')}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
-              {isSubmitting ? (
+              {(isSubmitting || createEventMutation.isPending) ? (
                 <LoadingSpinner size="sm" />
               ) : (
                 <>
@@ -371,17 +371,6 @@ export default function AdminCreateEventPage() {
                     />
                     {errors.endDate && <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>}
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, registrationDeadline: e.target.value }))}
-                    className={errors.registrationDeadline ? 'border-red-500' : ''}
-                  />
-                  {errors.registrationDeadline && <p className="text-sm text-red-500 mt-1">{errors.registrationDeadline}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -525,12 +514,16 @@ export default function AdminCreateEventPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {formData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                         {tag}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
+                        <button
+                          type="button"
                           onClick={() => removeTag(tag)}
-                        />
+                          className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                          aria-label={`Remove ${tag} tag`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </Badge>
                     ))}
                   </div>

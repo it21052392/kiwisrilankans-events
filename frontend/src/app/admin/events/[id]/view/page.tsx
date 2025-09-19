@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { useAuthStore } from '@/store/auth-store';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Calendar, 
   Clock, 
@@ -17,33 +20,36 @@ import {
   Phone,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatEventTime, formatEventDate } from '@/lib/time-utils';
-import { Event } from '@/store/event-store';
+import { useEvent, useApproveEvent, useRejectEvent } from '@/hooks/queries/useEvents';
 import { EventImageGallery } from '@/components/events/EventImageGallery';
+import Link from 'next/link';
 
-interface EventDetailsModalProps {
-  event: Event | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onApprove?: (eventId: string) => void;
-  onReject?: (eventId: string) => void;
-  isApproving?: boolean;
-  isRejecting?: boolean;
-}
+export default function AdminEventDetailsPage() {
+  const router = useRouter();
+  const params = useParams();
+  const eventId = params.id as string;
+  const { user, isAuthenticated } = useAuthStore();
 
-export function EventDetailsModal({ 
-  event, 
-  isOpen, 
-  onClose, 
-  onApprove, 
-  onReject,
-  isApproving = false,
-  isRejecting = false
-}: EventDetailsModalProps) {
-  if (!event) return null;
+  // Fetch event data
+  const { data: eventData, isLoading: eventLoading, error: eventError } = useEvent(eventId);
+  
+  // Mutations
+  const approveEventMutation = useApproveEvent();
+  const rejectEventMutation = useRejectEvent();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user || user.role !== 'admin') {
+      router.push('/auth/login');
+    }
+  }, [isAuthenticated, user, router]);
+
+  const event = eventData?.data?.event;
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -71,27 +77,83 @@ export function EventDetailsModal({
     );
   };
 
+  const handleApproveEvent = async () => {
+    if (!event) return;
+    
+    try {
+      await approveEventMutation.mutateAsync(event._id);
+      router.push('/admin/events');
+    } catch (error) {
+      console.error('Failed to approve event:', error);
+    }
+  };
+
+  const handleRejectEvent = async () => {
+    if (!event) return;
+    
+    try {
+      await rejectEventMutation.mutateAsync(event._id);
+      router.push('/admin/events');
+    } catch (error) {
+      console.error('Failed to reject event:', error);
+    }
+  };
+
+  if (eventLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner size="lg" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (eventError || !event) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <AlertCircle className="h-12 w-12 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">Event Not Found</h2>
+          <p className="text-muted-foreground">The event you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => router.push('/admin/events')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Events
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <div className="full-width-dialog">
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent 
-          className="max-h-[95vh] overflow-y-auto mx-4"
-        >
-        <DialogHeader className="pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-2xl font-bold mb-2 text-foreground break-words">
-                {event.title}
-              </DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground leading-relaxed">
-                {event.description}
-              </DialogDescription>
-            </div>
-            <div className="flex-shrink-0">
-              {getStatusBadge(event.status)}
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/admin/events')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Events
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{event.title}</h1>
+              <p className="text-muted-foreground mt-1">{event.description}</p>
             </div>
           </div>
-        </DialogHeader>
+          <div className="flex items-center gap-3">
+            {getStatusBadge(event.status)}
+            <Link href={`/admin/events/${event._id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Event
+              </Button>
+            </Link>
+          </div>
+        </div>
 
         <div className="space-y-10">
           {/* Event Images */}
@@ -323,57 +385,53 @@ export function EventDetailsModal({
         </div>
 
         {/* Action Buttons */}
-        {(event.status === 'pending_approval' || event.status === 'draft') && (onApprove || onReject) && (
+        {(event.status === 'pending_approval' || event.status === 'draft') && (
           <>
             <Separator className="my-6" />
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-                Close
+              <Button variant="outline" onClick={() => router.push('/admin/events')} className="w-full sm:w-auto">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Events
               </Button>
-              {onReject && (
-                <Button
-                  variant="destructive"
-                  onClick={() => onReject(event._id)}
-                  disabled={isRejecting}
-                  className="w-full sm:w-auto"
-                >
-                  {isRejecting ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Rejecting...
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </>
-                  )}
-                </Button>
-              )}
-              {onApprove && (
-                <Button
-                  onClick={() => onApprove(event._id)}
-                  disabled={isApproving}
-                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                >
-                  {isApproving ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Approving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </>
-                  )}
-                </Button>
-              )}
+              <Button
+                variant="destructive"
+                onClick={handleRejectEvent}
+                disabled={rejectEventMutation.isPending}
+                className="w-full sm:w-auto"
+              >
+                {rejectEventMutation.isPending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Rejecting...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleApproveEvent}
+                disabled={approveEventMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+              >
+                {approveEventMutation.isPending ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </>
+                )}
+              </Button>
             </div>
           </>
         )}
-        </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

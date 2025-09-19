@@ -53,7 +53,7 @@ export default function AdminUsersPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const users = usersData?.data?.users || [];
 

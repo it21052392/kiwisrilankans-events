@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime as formatEventTimeUtil, formatEventDateShort } from '@/lib/time-utils';
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -113,10 +114,22 @@ export default function CalendarPage() {
     const dayEvents = eventsByDate[dateString] || [];
     
     return dayEvents.filter(event => {
-      const eventStart = new Date(event.startDate);
-      const eventEnd = new Date(event.endDate);
-      const eventStartHour = eventStart.getHours();
-      const eventEndHour = eventEnd.getHours();
+      // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+      let eventStartHour, eventEndHour;
+      
+      if (event.startTime && event.endTime) {
+        // Parse time strings like "08:00" and "12:00"
+        const [startHour] = event.startTime.split(':').map(Number);
+        const [endHour] = event.endTime.split(':').map(Number);
+        eventStartHour = startHour;
+        eventEndHour = endHour;
+      } else {
+        // Fallback to using startDate and endDate
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        eventStartHour = eventStart.getHours();
+        eventEndHour = eventEnd.getHours();
+      }
       
       // Check if event overlaps with this time slot (hour to hour+1)
       // Event starts before or during this hour AND ends after this hour starts
@@ -142,10 +155,27 @@ export default function CalendarPage() {
     let lastEndTime = 0;
 
     sortedEvents.forEach(event => {
-      const eventStart = new Date(event.startDate);
-      const eventEnd = new Date(event.endDate);
-      const startTime = eventStart.getTime();
-      const endTime = eventEnd.getTime();
+      // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+      let startTime, endTime;
+      
+      if (event.startTime && event.endTime) {
+        // Parse time strings like "08:00" and "12:00"
+        const [startHour, startMin] = event.startTime.split(':').map(Number);
+        const [endHour, endMin] = event.endTime.split(':').map(Number);
+        const eventDate = new Date(event.startDate);
+        const eventStart = new Date(eventDate);
+        eventStart.setHours(startHour, startMin, 0, 0);
+        const eventEnd = new Date(eventDate);
+        eventEnd.setHours(endHour, endMin, 0, 0);
+        startTime = eventStart.getTime();
+        endTime = eventEnd.getTime();
+      } else {
+        // Fallback to using startDate and endDate
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        startTime = eventStart.getTime();
+        endTime = eventEnd.getTime();
+      }
 
       if (startTime < lastEndTime) {
         // Event overlaps with current group
@@ -169,12 +199,26 @@ export default function CalendarPage() {
 
   // Calculate event position and height with overlap handling
   const getEventPosition = (event: any, hour: number, groupIndex: number = 0, groupSize: number = 1) => {
-    const eventStart = new Date(event.startDate);
-    const eventEnd = new Date(event.endDate);
-    const eventStartHour = eventStart.getHours();
-    const eventStartMinute = eventStart.getMinutes();
-    const eventEndHour = eventEnd.getHours();
-    const eventEndMinute = eventEnd.getMinutes();
+    // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+    let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
+    
+    if (event.startTime && event.endTime) {
+      // Parse time strings like "08:00" and "12:00"
+      const [startHour, startMin] = event.startTime.split(':').map(Number);
+      const [endHour, endMin] = event.endTime.split(':').map(Number);
+      eventStartHour = startHour;
+      eventStartMinute = startMin;
+      eventEndHour = endHour;
+      eventEndMinute = endMin;
+    } else {
+      // Fallback to using startDate and endDate
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      eventStartHour = eventStart.getHours();
+      eventStartMinute = eventStart.getMinutes();
+      eventEndHour = eventEnd.getHours();
+      eventEndMinute = eventEnd.getMinutes();
+    }
     
     const startTimeInHours = eventStartHour + (eventStartMinute / 60);
     const endTimeInHours = eventEndHour + (eventEndMinute / 60);
@@ -229,9 +273,8 @@ export default function CalendarPage() {
     return date < today;
   };
 
-  const formatEventTime = (startDate: string) => {
-    const date = new Date(startDate);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatEventTime = (event: any) => {
+    return formatEventTimeUtil(event);
   };
 
   const getEventStatusColor = (status: string) => {
@@ -657,7 +700,7 @@ export default function CalendarPage() {
                             >
                               <div className="font-medium text-sm truncate">{event.title}</div>
                               <div className="text-xs text-muted-foreground">
-                                {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                {formatEventTime(event)}
                               </div>
                               {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
                                 <div className={`font-medium text-xs ${
@@ -721,12 +764,26 @@ export default function CalendarPage() {
                         {/* Events container - positioned absolutely over the grid */}
                         <div className="absolute inset-0 pointer-events-none">
                           {getEventsForDate(date).map((event, eventIndex) => {
-                            const eventStart = new Date(event.startDate);
-                            const eventEnd = new Date(event.endDate);
-                            const eventStartHour = eventStart.getHours();
-                            const eventStartMinute = eventStart.getMinutes();
-                            const eventEndHour = eventEnd.getHours();
-                            const eventEndMinute = eventEnd.getMinutes();
+                            // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+                            let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
+                            
+                            if (event.startTime && event.endTime) {
+                              // Parse time strings like "08:00" and "12:00"
+                              const [startHour, startMin] = event.startTime.split(':').map(Number);
+                              const [endHour, endMin] = event.endTime.split(':').map(Number);
+                              eventStartHour = startHour;
+                              eventStartMinute = startMin;
+                              eventEndHour = endHour;
+                              eventEndMinute = endMin;
+                            } else {
+                              // Fallback to using startDate and endDate
+                              const eventStart = new Date(event.startDate);
+                              const eventEnd = new Date(event.endDate);
+                              eventStartHour = eventStart.getHours();
+                              eventStartMinute = eventStart.getMinutes();
+                              eventEndHour = eventEnd.getHours();
+                              eventEndMinute = eventEnd.getMinutes();
+                            }
                             
                             const startTimeInHours = eventStartHour + (eventStartMinute / 60);
                             const endTimeInHours = eventEndHour + (eventEndMinute / 60);
@@ -769,7 +826,7 @@ export default function CalendarPage() {
                                     <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
                                   </div>
                                   <div className="text-muted-foreground truncate hidden sm:block">
-                                    {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                    {formatEventTime(event)}
                                   </div>
                                   {/* Status Indicator */}
                                   {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
@@ -855,7 +912,7 @@ export default function CalendarPage() {
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3 text-muted-foreground" />
                                   <span className="text-xs font-medium text-muted-foreground">
-                                    {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                    {formatEventTime(event)}
                                   </span>
                                 </div>
                                 <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getEventStatusColor(event.status)}`}>

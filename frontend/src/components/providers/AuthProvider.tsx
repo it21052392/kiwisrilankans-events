@@ -33,7 +33,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initializeAuth();
-  }, [checkAuth, refreshToken]);
+  }, []); // Empty dependency array - only run once on mount
 
   // Show loading spinner while initializing
   if (!isInitialized) {

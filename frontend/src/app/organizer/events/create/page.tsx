@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { useCreatePencilHold } from '@/hooks/queries/usePencilHolds';
+import { useCreateEvent } from '@/hooks/queries/useEvents';
 import { eventsService, CreateEventData } from '@/services/events.service';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
@@ -44,7 +45,8 @@ export default function CreateEventPage() {
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   
-  // Pencil hold mutation
+  // Mutations
+  const createEventMutation = useCreateEvent();
   const createPencilHoldMutation = useCreatePencilHold();
 
   // Form state
@@ -54,7 +56,6 @@ export default function CreateEventPage() {
     category: '',
     startDate: '',
     endDate: '',
-    registrationDeadline: '',
     location: {
       name: '',
       address: '',
@@ -87,7 +88,7 @@ export default function CreateEventPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -113,7 +114,7 @@ export default function CreateEventPage() {
     }
 
     if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-      newErrors.endDate = 'End date must be after start date';
+      newErrors.endDate = 'End date must be on or after start date';
     }
 
     if (!formData.location.name.trim()) {
@@ -260,10 +261,9 @@ export default function CreateEventPage() {
         ...formData,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
-        registrationDeadline: formData.registrationDeadline ? new Date(formData.registrationDeadline).toISOString() : formData.registrationDeadline,
       };
 
-      const response = await eventsService.createEvent(eventData);
+      const response = await createEventMutation.mutateAsync(eventData);
       
       if (response.success) {
         const eventId = response.data.event._id;
@@ -388,11 +388,11 @@ export default function CreateEventPage() {
             </CardContent>
           </Card>
 
-          {/* Event Images */}
+          {/* Event Image */}
           <EventImageUpload
             images={uploadedImages}
             onImagesChange={handleImagesChange}
-            maxImages={5}
+            maxImages={1}
             disabled={isSubmitting}
             showGuidelines={true}
           />
@@ -434,15 +434,6 @@ export default function CreateEventPage() {
                   {errors.endDate && <p className="text-sm text-red-500">{errors.endDate}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-                  <Input
-                    id="registrationDeadline"
-                    type="datetime-local"
-                    value={formData.registrationDeadline}
-                    onChange={(e) => handleInputChange('registrationDeadline', e.target.value)}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -585,12 +576,16 @@ export default function CreateEventPage() {
               {formData.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1 pr-1">
                       {tag}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
+                      <button
+                        type="button"
                         onClick={() => removeTag(tag)}
-                      />
+                        className="ml-1 hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${tag} tag`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
                   ))}
                 </div>
@@ -626,10 +621,14 @@ export default function CreateEventPage() {
                   {formData.requirements.map((requirement, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <span className="text-sm">• {requirement}</span>
-                      <X
-                        className="h-3 w-3 cursor-pointer text-muted-foreground"
+                      <button
+                        type="button"
                         onClick={() => removeRequirement(requirement)}
-                      />
+                        className="hover:bg-gray-300 rounded-full p-0.5 transition-colors"
+                        aria-label={`Remove ${requirement} requirement`}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -741,10 +740,10 @@ export default function CreateEventPage() {
             <Button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || createEventMutation.isPending}
             >
               <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Creating...' : 'Create Event'}
+              {(isSubmitting || createEventMutation.isPending) ? 'Creating...' : 'Create Event'}
             </Button>
           </div>
         </form>

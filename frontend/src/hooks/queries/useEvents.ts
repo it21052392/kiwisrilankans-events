@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsService } from '@/services/events.service';
 import { EventFilters } from '@/store/event-store';
 
-export const useEvents = (filters: EventFilters = {}) => {
+export const useEvents = (filters: EventFilters = {}, options: { enabled?: boolean } = {}) => {
   return useQuery({
     queryKey: ['events', 'list', filters],
     queryFn: () => eventsService.getEvents(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options.enabled !== false, // Default to true, but allow disabling
   });
 };
 

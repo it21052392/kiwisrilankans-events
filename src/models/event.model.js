@@ -35,21 +35,28 @@ const eventSchema = new mongoose.Schema(
       required: [true, 'End date is required'],
       validate: {
         validator: function (value) {
-          return value > this.startDate;
+          return value >= this.startDate;
         },
-        message: 'End date must be after start date',
+        message: 'End date must be on or after start date',
       },
     },
-    registrationDeadline: {
-      type: Date,
+    startTime: {
+      type: String,
       required: false,
-      validate: {
-        validator: function (value) {
-          if (!value) return true; // Optional field
-          return value <= this.startDate;
-        },
-        message: 'Registration deadline must be before or on start date',
-      },
+      trim: true,
+      match: [
+        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+        'Start time must be in HH:MM format',
+      ],
+    },
+    endTime: {
+      type: String,
+      required: false,
+      trim: true,
+      match: [
+        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+        'End time must be in HH:MM format',
+      ],
     },
     location: {
       name: {
@@ -271,12 +278,7 @@ eventSchema.virtual('availableSpots').get(function () {
 
 // Virtual for registration status
 eventSchema.virtual('isRegistrationOpen').get(function () {
-  const now = new Date();
-  return (
-    this.status === 'published' &&
-    (!this.registrationDeadline || this.registrationDeadline > now) &&
-    this.availableSpots > 0
-  );
+  return this.status === 'published' && this.availableSpots > 0;
 });
 
 // Virtual for event status based on dates
@@ -302,13 +304,8 @@ eventSchema.pre('save', function (next) {
 
 // Pre-save middleware to validate dates
 eventSchema.pre('save', function (next) {
-  if (this.startDate >= this.endDate) {
-    return next(new Error('End date must be after start date'));
-  }
-  if (this.registrationDeadline && this.registrationDeadline > this.startDate) {
-    return next(
-      new Error('Registration deadline must be before or on start date')
-    );
+  if (this.startDate > this.endDate) {
+    return next(new Error('End date must be on or after start date'));
   }
   next();
 });

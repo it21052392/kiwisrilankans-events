@@ -131,7 +131,7 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [searchParams, login, router, hasProcessed]);
+  }, [searchParams, login, hasProcessed]); // Removed router from dependencies
 
   return (
     <AuthLayout 

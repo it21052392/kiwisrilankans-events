@@ -45,7 +45,7 @@ export default function ImageManagementPage() {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   useEffect(() => {
     loadImages();

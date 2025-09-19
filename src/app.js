@@ -30,7 +30,13 @@ app.use(
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
     optionsSuccessStatus: 200,
   })
 );
@@ -70,6 +76,11 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Static file serving for local uploads (development only)
+if (process.env.NODE_ENV === 'development') {
+  app.use('/uploads', express.static('uploads'));
+}
+
 // Welcome route
 app.get('/', (req, res) => {
   res.json({
@@ -90,6 +101,18 @@ app.get('/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+  });
+});
+
+// Debug endpoint for testing uploads
+app.post('/debug-upload', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Debug endpoint working',
+    body: req.body,
+    files: req.files,
+    file: req.file,
+    headers: req.headers,
   });
 });
 

@@ -13,7 +13,6 @@ export interface Event {
   };
   startDate: string;
   endDate: string;
-  registrationDeadline?: string;
   location: {
     name: string;
     address: string;

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime, formatEventDate, formatEventDateShort } from '@/lib/time-utils';
 
 interface EventCardProps {
   event: {
@@ -147,9 +148,27 @@ export function EventCard({
     return (
       <Link href={`/events/${event.slug || event._id}`}>
         <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
-          <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-            <Calendar className="h-16 w-16 text-primary" />
-          </div>
+          {event.images && event.images.length > 0 ? (
+            <div className="aspect-video overflow-hidden">
+              <img 
+                src={event.images[0].url} 
+                alt={event.images[0].alt || event.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  // Hide the image and show placeholder if it fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <Calendar className="h-16 w-16 text-primary" />
+              </div>
+            </div>
+          ) : (
+            <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <Calendar className="h-16 w-16 text-primary" />
+            </div>
+          )}
           <CardHeader>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="secondary">{event.category?.name || 'Event'}</Badge>
@@ -185,11 +204,11 @@ export function EventCard({
             <div className="space-y-3">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4 mr-2" />
-                {format(new Date(event.startDate), 'EEEE, MMMM do, yyyy')}
+                {formatEventDate(event)}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <Clock className="h-4 w-4 mr-2" />
-                {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+                {formatEventTime(event)}
               </div>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 mr-2" />
@@ -236,9 +255,27 @@ export function EventCard({
     <Link href={`/events/${event.slug || event._id}`}>
       <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
         <CardHeader>
-          <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mb-4 flex items-center justify-center">
-            <Calendar className="h-12 w-12 text-primary" />
-          </div>
+          {event.images && event.images.length > 0 ? (
+            <div className="aspect-video rounded-lg mb-4 overflow-hidden">
+              <img 
+                src={event.images[0].url} 
+                alt={event.images[0].alt || event.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Hide the image and show placeholder if it fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
+                <Calendar className="h-12 w-12 text-primary" />
+              </div>
+            </div>
+          ) : (
+            <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mb-4 flex items-center justify-center">
+              <Calendar className="h-12 w-12 text-primary" />
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="secondary">{event.category?.name || 'Event'}</Badge>
             <Badge 
@@ -267,7 +304,7 @@ export function EventCard({
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-2" />
-              {format(new Date(event.startDate), 'h:mm a')} - {format(new Date(event.endDate), 'h:mm a')}
+              {formatEventTime(event)}
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mr-2" />

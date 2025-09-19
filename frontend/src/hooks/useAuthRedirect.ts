@@ -77,5 +77,5 @@ export function useAuthRedirect() {
     }, 100); // Small delay to prevent rapid redirects
 
     return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, user, isLoading, pathname, router]);
+  }, [isAuthenticated, user, isLoading, pathname]); // Removed router from dependencies
 }

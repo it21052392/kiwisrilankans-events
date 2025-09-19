@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { formatEventTime as formatEventTimeUtil } from '@/lib/time-utils';
 
 interface CalendarWidgetProps {
   showTitle?: boolean;
@@ -188,12 +189,26 @@ export function CalendarWidget({
 
   // Calculate event position and height based on start/end times
   const getEventPosition = (event: any, slotHour: number) => {
-    const eventStart = new Date(event.startDate);
-    const eventEnd = new Date(event.endDate);
-    const eventStartHour = eventStart.getHours();
-    const eventStartMinute = eventStart.getMinutes();
-    const eventEndHour = eventEnd.getHours();
-    const eventEndMinute = eventEnd.getMinutes();
+    // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+    let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
+    
+    if (event.startTime && event.endTime) {
+      // Parse time strings like "08:00" and "12:00"
+      const [startHour, startMin] = event.startTime.split(':').map(Number);
+      const [endHour, endMin] = event.endTime.split(':').map(Number);
+      eventStartHour = startHour;
+      eventStartMinute = startMin;
+      eventEndHour = endHour;
+      eventEndMinute = endMin;
+    } else {
+      // Fallback to using startDate and endDate
+      const eventStart = new Date(event.startDate);
+      const eventEnd = new Date(event.endDate);
+      eventStartHour = eventStart.getHours();
+      eventStartMinute = eventStart.getMinutes();
+      eventEndHour = eventEnd.getHours();
+      eventEndMinute = eventEnd.getMinutes();
+    }
     
     const startTimeInHours = eventStartHour + (eventStartMinute / 60);
     const endTimeInHours = eventEndHour + (eventEndMinute / 60);
@@ -346,23 +361,37 @@ export function CalendarWidget({
                           
                           {/* Events container - positioned absolutely over the grid */}
                           <div className="absolute inset-0 pointer-events-none">
-                            {getEventsForDate(date)
-                              .slice(0, 6) // Limit to 6 events per day for widget
-                              .map((event, eventIndex) => {
+                          {getEventsForDate(date)
+                            .slice(0, 6) // Limit to 6 events per day for widget
+                            .map((event, eventIndex) => {
+                              // Use startTime and endTime fields if available, otherwise fall back to startDate/endDate
+                              let eventStartHour, eventStartMinute, eventEndHour, eventEndMinute;
+                              
+                              if (event.startTime && event.endTime) {
+                                // Parse time strings like "08:00" and "12:00"
+                                const [startHour, startMin] = event.startTime.split(':').map(Number);
+                                const [endHour, endMin] = event.endTime.split(':').map(Number);
+                                eventStartHour = startHour;
+                                eventStartMinute = startMin;
+                                eventEndHour = endHour;
+                                eventEndMinute = endMin;
+                              } else {
+                                // Fallback to using startDate and endDate
                                 const eventStart = new Date(event.startDate);
                                 const eventEnd = new Date(event.endDate);
-                                const eventStartHour = eventStart.getHours();
-                                const eventStartMinute = eventStart.getMinutes();
-                                const eventEndHour = eventEnd.getHours();
-                                const eventEndMinute = eventEnd.getMinutes();
-                                
-                                const startTimeInHours = eventStartHour + (eventStartMinute / 60);
-                                const endTimeInHours = eventEndHour + (eventEndMinute / 60);
-                                const durationInHours = endTimeInHours - startTimeInHours;
-                                
-                                // Calculate position from the top of the day (not relative to a specific hour)
-                                const top = (startTimeInHours - 1) * 48 + 'px'; // 48px per hour, starting from 1 AM
-                                const height = durationInHours * 48 + 'px';
+                                eventStartHour = eventStart.getHours();
+                                eventStartMinute = eventStart.getMinutes();
+                                eventEndHour = eventEnd.getHours();
+                                eventEndMinute = eventEnd.getMinutes();
+                              }
+                              
+                              const startTimeInHours = eventStartHour + (eventStartMinute / 60);
+                              const endTimeInHours = eventEndHour + (eventEndMinute / 60);
+                              const durationInHours = endTimeInHours - startTimeInHours;
+                              
+                              // Calculate position from the top of the day (not relative to a specific hour)
+                              const top = (startTimeInHours - 1) * 48 + 'px'; // 48px per hour, starting from 1 AM
+                              const height = durationInHours * 48 + 'px';
                                 
                                 return (
                                   <Link
@@ -397,7 +426,7 @@ export function CalendarWidget({
                                         <span className="sm:hidden">{event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}</span>
                                       </div>
                                       <div className="text-muted-foreground truncate hidden sm:block">
-                                        {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                        {formatEventTimeUtil(event)}
                                       </div>
                                       {/* Status Indicator */}
                                       {(event.status === 'pencil_hold' || event.status === 'pencil_hold_confirmed') && (
@@ -483,7 +512,7 @@ export function CalendarWidget({
                                 {event.title}
                               </div>
                               <div className="text-muted-foreground text-xs">
-                                {formatEventTime(event.startDate)} - {format(new Date(event.endDate), 'h:mm a')}
+                                {formatEventTimeUtil(event)}
                               </div>
                             </div>
                           </Link>
@@ -537,7 +566,7 @@ export function CalendarWidget({
                             {event.title}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {format(new Date(event.startDate), 'MMM do, h:mm a')}
+                            {format(new Date(event.startDate), 'MMM do')} {formatEventTimeUtil(event)}
                           </div>
                         </div>
                         <div className="flex-shrink-0">

@@ -16,6 +16,15 @@ const uploadSingle = asyncHandler(async (req, res) => {
   const { type = 'general' } = req.body;
   const userId = req.user._id;
 
+  // Debug logging
+  logger.info('Upload request received:', {
+    fileName: req.file.originalname,
+    fileSize: req.file.size,
+    fileType: req.file.mimetype,
+    uploadType: type,
+    userId: userId,
+  });
+
   const uploadResult = await uploadService.uploadSingle(req.file, type, userId);
 
   logger.info(`File uploaded: ${uploadResult.filename} - ${req.user.email}`);

@@ -241,7 +241,14 @@ export class ImageUploadService {
    * Delete image
    */
   static async deleteImage(imageId: string): Promise<void> {
-    await apiClient.delete(`/api/uploads/${imageId}`);
+    console.log('ImageUploadService.deleteImage called with ID:', imageId);
+    try {
+      const response = await apiClient.delete(`/api/uploads/${imageId}`);
+      console.log('Delete response:', response);
+    } catch (error) {
+      console.error('Delete image error:', error);
+      throw error;
+    }
   }
 
   /**

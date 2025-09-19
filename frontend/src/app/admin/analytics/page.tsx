@@ -59,7 +59,7 @@ export default function AdminAnalyticsPage() {
     if (!isAuthenticated || !user || user.role !== 'admin') {
       router.push('/auth/login');
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user]); // Removed router from dependencies
 
   const events = eventsData?.data?.events || [];
   const users = usersData?.data?.users || [];
