@@ -60,12 +60,12 @@ print_status "Installing/updating dependencies..."
 
 # Install backend dependencies
 print_status "Installing backend dependencies..."
-npm install --production
+npm install
 
 # Install frontend dependencies
 print_status "Installing frontend dependencies..."
 cd frontend
-npm install --production
+npm install
 cd ..
 
 # Create logs directory
