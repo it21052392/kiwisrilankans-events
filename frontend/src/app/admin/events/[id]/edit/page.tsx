@@ -101,12 +101,20 @@ export default function AdminEditEventPage() {
   useEffect(() => {
     if (eventData?.data?.event) {
       const event = eventData.data.event;
+      
+      // Helper function to format date for datetime-local input
+      const formatDateForInput = (dateField: string) => {
+        if (!dateField) return '';
+        const date = new Date(dateField);
+        return date.toISOString().slice(0, 16);
+      };
+      
       setFormData({
         title: event.title || '',
         description: event.description || '',
         category: event.category?._id || '',
-        startDate: event.startDate ? format(new Date(event.startDate), "yyyy-MM-dd'T'HH:mm") : '',
-        endDate: event.endDate ? format(new Date(event.endDate), "yyyy-MM-dd'T'HH:mm") : '',
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -132,13 +140,20 @@ export default function AdminEditEventPage() {
   const handleInputChange = (field: string, value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
-        }
-      }));
+      setFormData(prev => {
+        const parentValue = prev[parent as keyof typeof prev];
+        const parentObject = parentValue && typeof parentValue === 'object' && parentValue !== null 
+          ? parentValue as Record<string, any>
+          : {};
+        
+        return {
+          ...prev,
+          [parent]: {
+            ...parentObject,
+            [child]: value
+          }
+        };
+      });
     } else {
       setFormData(prev => ({
         ...prev,
@@ -186,9 +201,16 @@ export default function AdminEditEventPage() {
     setIsSubmitting(true);
 
     try {
+      // Format dates to include timezone information for backend validation
+      const eventData = {
+        ...formData,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
+      };
+
       await updateEventMutation.mutateAsync({
         id: eventId,
-        data: formData
+        data: eventData
       });
       toast.success('Event updated successfully');
       router.push('/admin/events');

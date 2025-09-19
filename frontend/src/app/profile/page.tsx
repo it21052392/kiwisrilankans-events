@@ -91,7 +91,14 @@ export default function ProfilePage() {
       
       if (response.success) {
         // Update the user in the auth store
-        setUser(response.data.user);
+        setUser({
+          id: response.data.user._id,
+          name: response.data.user.name,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          avatar: response.data.user.avatar,
+          createdAt: response.data.user.createdAt,
+        });
         
         toast({
           title: 'Profile Updated',

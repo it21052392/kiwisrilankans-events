@@ -93,7 +93,7 @@ export default function AdminDashboard() {
   // Calculate stats
   const totalEvents = events.length;
   const publishedEvents = events.filter(event => event.status === 'published').length;
-  const pendingEvents = events.filter(event => event.status === 'pending').length;
+  const pendingEvents = events.filter(event => event.status === 'pending_approval').length;
   const totalUsers = users.length;
   const totalOrganizers = users.filter(user => user.role === 'organizer').length;
   const totalAdmins = users.filter(user => user.role === 'admin').length;
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {events.slice(0, 3).map((event) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={event._id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{event.title}</h4>
                         <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
@@ -211,14 +211,14 @@ export default function AdminDashboard() {
                           <Badge 
                             variant={
                               event.status === 'published' ? 'default' : 
-                              event.status === 'pending' ? 'secondary' : 
+                              event.status === 'pending_approval' ? 'secondary' : 
                               'destructive'
                             }
                           >
                             {event.status}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            by {event.organizer?.name || 'Unknown'}
+                            by {event.createdBy?.name || 'Unknown'}
                           </span>
                         </div>
                       </div>
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Link href={`/admin/events/${event.id}/edit`}>
+                        <Link href={`/admin/events/${event._id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {users.slice(0, 3).map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={user._id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                           <Users className="h-4 w-4 text-primary" />

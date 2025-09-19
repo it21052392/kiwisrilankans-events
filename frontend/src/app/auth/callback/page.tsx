@@ -32,7 +32,11 @@ export default function AuthCallbackPage() {
         if (error) {
           setStatus('error');
           setMessage('Authentication failed. Please try again.');
-          toast.error('Authentication failed. Please try again.');
+          toast({
+            title: 'Authentication Failed',
+            description: 'Authentication failed. Please try again.',
+            variant: 'destructive',
+          });
           
           // Redirect to login page after 3 seconds
           setTimeout(() => {
@@ -45,7 +49,11 @@ export default function AuthCallbackPage() {
         if (!token || !role) {
           setStatus('error');
           setMessage('Missing authentication parameters. Please try again.');
-          toast.error('Missing authentication parameters. Please try again.');
+          toast({
+            title: 'Authentication Error',
+            description: 'Missing authentication parameters. Please try again.',
+            variant: 'destructive',
+          });
           
           // Redirect to login page after 3 seconds
           setTimeout(() => {
@@ -58,7 +66,11 @@ export default function AuthCallbackPage() {
         if (!['organizer', 'admin'].includes(role)) {
           setStatus('error');
           setMessage('Invalid user role. Please try again.');
-          toast.error('Invalid user role. Please try again.');
+          toast({
+            title: 'Authentication Error',
+            description: 'Invalid user role. Please try again.',
+            variant: 'destructive',
+          });
           
           // Redirect to login page after 3 seconds
           setTimeout(() => {
@@ -109,7 +121,11 @@ export default function AuthCallbackPage() {
           console.error('Error getting user information:', error);
           setStatus('error');
           setMessage('Failed to complete authentication. Please try again.');
-          toast.error('Failed to complete authentication. Please try again.');
+          toast({
+            title: 'Authentication Error',
+            description: 'Failed to complete authentication. Please try again.',
+            variant: 'destructive',
+          });
           
           // Redirect to login page after 3 seconds
           setTimeout(() => {
@@ -121,7 +137,11 @@ export default function AuthCallbackPage() {
         console.error('Auth callback error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred. Please try again.');
-        toast.error('An unexpected error occurred. Please try again.');
+        toast({
+          title: 'Unexpected Error',
+          description: 'An unexpected error occurred. Please try again.',
+          variant: 'destructive',
+        });
         
         // Redirect to login page after 3 seconds
         setTimeout(() => {

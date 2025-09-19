@@ -91,8 +91,11 @@ export default function AdminEventDetailsPage() {
   const handleRejectEvent = async () => {
     if (!event) return;
     
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+    
     try {
-      await rejectEventMutation.mutateAsync(event._id);
+      await rejectEventMutation.mutateAsync({ id: event._id, reason });
       router.push('/admin/events');
     } catch (error) {
       console.error('Failed to reject event:', error);

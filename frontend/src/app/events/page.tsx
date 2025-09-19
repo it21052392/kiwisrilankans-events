@@ -31,7 +31,7 @@ export default function EventsPage() {
   const [filters, setFilters] = useState({
     search: '',
     category: '',
-    sortBy: 'startDate',
+    sortBy: 'startDate' as 'title' | 'startDate' | 'endDate' | 'createdAt' | 'price' | 'capacity',
     sortOrder: 'asc' as 'asc' | 'desc',
     hidePast: true,
   });
