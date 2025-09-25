@@ -127,8 +127,8 @@ export default function EditEventPage() {
         title: event.title || '',
         description: event.description || '',
         category: event.category?._id || '',
-        startDate: formatDateTimeForInput(event.startDate, event.startTime),
-        endDate: formatDateTimeForInput(event.endDate, event.endTime),
+        startDate: formatDateTimeForInput(event.startDate),
+        endDate: formatDateTimeForInput(event.endDate),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
