@@ -156,7 +156,7 @@ export default function EventDetailPage() {
 
             {/* Event Image */}
             {event.images && event.images.length > 0 && event.images[0]?.url ? (
-              <div className="aspect-video rounded-lg overflow-hidden">
+              <div className="aspect-[3/4] rounded-lg overflow-hidden">
                 <img 
                   src={event.images[0].url} 
                   alt={event.images[0].alt || event.title}
@@ -167,12 +167,12 @@ export default function EventDetailPage() {
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
                   }}
                 />
-                <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
+                <div className="hidden aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                   <Calendar className="h-16 w-16 text-primary" />
                 </div>
               </div>
             ) : (
-              <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
+              <div className="aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                 <Calendar className="h-16 w-16 text-primary" />
                 <div className="text-sm text-gray-500 mt-2">No images available</div>
               </div>

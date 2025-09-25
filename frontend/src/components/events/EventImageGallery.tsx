@@ -26,7 +26,7 @@ export interface EventImageGalleryProps {
   onImageClick?: (image: ImageUploadResult, index: number) => void;
   allowFullscreen?: boolean;
   showDownloadButton?: boolean;
-  aspectRatio?: 'square' | 'video' | 'auto';
+  aspectRatio?: 'square' | 'video' | 'portrait' | 'auto';
 }
 
 const ImageThumbnail: React.FC<{
@@ -34,7 +34,7 @@ const ImageThumbnail: React.FC<{
   isActive: boolean;
   onClick: () => void;
   showPrimaryBadge?: boolean;
-  aspectRatio?: 'square' | 'video' | 'auto';
+  aspectRatio?: 'square' | 'video' | 'portrait' | 'auto';
 }> = ({ image, isActive, onClick, showPrimaryBadge = false, aspectRatio = 'video' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -42,6 +42,7 @@ const ImageThumbnail: React.FC<{
   const aspectRatioClass = {
     square: 'aspect-square',
     video: 'aspect-video',
+    portrait: 'aspect-[3/4]',
     auto: 'aspect-auto',
   }[aspectRatio];
 

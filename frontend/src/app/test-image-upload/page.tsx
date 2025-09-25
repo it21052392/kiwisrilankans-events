@@ -85,7 +85,7 @@ export default function TestImageUploadPage() {
                   images={uploadedImages}
                   showPrimaryBadge={true}
                   allowFullscreen={true}
-                  aspectRatio="video"
+                  aspectRatio="portrait"
                   onImageClick={(image, index) => {
                   }}
                 />

@@ -149,7 +149,7 @@ export function EventCard({
       <Link href={`/events/${event.slug || event._id}`}>
         <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
           {event.images && event.images.length > 0 && event.images[0]?.url ? (
-            <div className="aspect-video overflow-hidden">
+            <div className="aspect-[3/4] overflow-hidden">
               <img 
                 src={event.images[0].url} 
                 alt={event.images[0].alt || event.title}
@@ -160,12 +160,12 @@ export function EventCard({
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-              <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <div className="hidden aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                 <Calendar className="h-16 w-16 text-primary" />
               </div>
             </div>
           ) : (
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            <div className="aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
               <Calendar className="h-16 w-16 text-primary" />
             </div>
           )}
@@ -256,7 +256,7 @@ export function EventCard({
       <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
         <CardHeader>
           {event.images && event.images.length > 0 && event.images[0]?.url ? (
-            <div className="aspect-video rounded-lg mb-4 overflow-hidden">
+            <div className="aspect-[3/4] rounded-lg mb-4 overflow-hidden">
               <img 
                 src={event.images[0].url} 
                 alt={event.images[0].alt || event.title}
@@ -267,12 +267,12 @@ export function EventCard({
                   e.currentTarget.nextElementSibling?.classList.remove('hidden');
                 }}
               />
-              <div className="hidden aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
+              <div className="hidden aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center">
                 <Calendar className="h-12 w-12 text-primary" />
               </div>
             </div>
           ) : (
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mb-4 flex items-center justify-center">
+            <div className="aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mb-4 flex items-center justify-center">
               <Calendar className="h-12 w-12 text-primary" />
             </div>
           )}

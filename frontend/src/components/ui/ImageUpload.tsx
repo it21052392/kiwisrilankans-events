@@ -62,7 +62,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
     <div 
       className="relative group"
     >
-      <div className="aspect-video rounded-lg overflow-hidden border bg-gray-50">
+      <div className="aspect-[3/4] rounded-lg overflow-hidden border bg-gray-50">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />

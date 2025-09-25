@@ -178,7 +178,7 @@ export default function AdminEventDetailsPage() {
                 }))}
                 showPrimaryBadge={true}
                 allowFullscreen={true}
-                aspectRatio="video"
+                aspectRatio="portrait"
               />
             </div>
           )}
