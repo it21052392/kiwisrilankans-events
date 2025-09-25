@@ -154,4 +154,28 @@ export const eventsService = {
   async getPendingEvents(filters: Partial<EventFilters> = {}): Promise<EventsResponse> {
     return apiClient.get<EventsResponse>('/api/admin/events/pending', filters);
   },
+
+  // Check for event conflicts
+  async checkEventConflicts(data: CreateEventData, excludeEventId?: string): Promise<{
+    success: boolean;
+    data: {
+      hasConflict: boolean;
+      conflicts: any[];
+      conflictType: string | null;
+      message: string;
+      suggestions: any;
+    };
+  }> {
+    const queryParams = excludeEventId ? { excludeEventId } : {};
+    return apiClient.post<{
+      success: boolean;
+      data: {
+        hasConflict: boolean;
+        conflicts: any[];
+        conflictType: string | null;
+        message: string;
+        suggestions: any;
+      };
+    }>('/api/events/check-conflicts', data, queryParams);
+  },
 };

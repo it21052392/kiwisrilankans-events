@@ -15,6 +15,7 @@ import {
   restoreEvent,
   unpublishEvent,
   updateEventPencilHoldStatus,
+  checkEventConflicts,
 } from '../controllers/events.controller.js';
 import { authenticate } from '../middlewares/auth.js';
 import { requireAdmin, requireAdminOrOrganizer } from '../middlewares/rbac.js';
@@ -45,6 +46,14 @@ router.post(
   requireAdminOrOrganizer,
   validateBody(eventSchemas.create),
   createEvent
+);
+
+// Check for conflicts (for both admin and organizer)
+router.post(
+  '/check-conflicts',
+  requireAdminOrOrganizer,
+  validateBody(eventSchemas.create),
+  checkEventConflicts
 );
 
 // Organizer routes (for their own events)

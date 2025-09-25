@@ -63,18 +63,33 @@ const createEvent = asyncHandler(async (req, res) => {
   const eventData = req.body;
   const userId = req.user._id;
 
-  const event = await eventService.createEvent({
-    ...eventData,
-    createdBy: userId,
-  });
+  try {
+    const event = await eventService.createEvent({
+      ...eventData,
+      createdBy: userId,
+    });
 
-  logger.info(`Event created: ${event.title}`);
+    logger.info(`Event created: ${event.title}`);
 
-  res.status(201).json({
-    success: true,
-    message: 'Event created successfully',
-    data: { event },
-  });
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      data: { event },
+    });
+  } catch (error) {
+    // Handle conflict errors specifically
+    if (error.statusCode === 409 && error.conflictDetails) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        conflictDetails: error.conflictDetails,
+        error: 'Event conflict detected',
+      });
+    }
+
+    // Re-throw other errors to be handled by global error handler
+    throw error;
+  }
 });
 
 // @desc    Update event (Admin only)
@@ -84,15 +99,30 @@ const updateEvent = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
 
-  const event = await eventService.updateEvent(id, updateData);
+  try {
+    const event = await eventService.updateEvent(id, updateData);
 
-  logger.info(`Event updated by admin: ${event.title}`);
+    logger.info(`Event updated by admin: ${event.title}`);
 
-  res.json({
-    success: true,
-    message: 'Event updated successfully',
-    data: { event },
-  });
+    res.json({
+      success: true,
+      message: 'Event updated successfully',
+      data: { event },
+    });
+  } catch (error) {
+    // Handle conflict errors specifically
+    if (error.statusCode === 409 && error.conflictDetails) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        conflictDetails: error.conflictDetails,
+        error: 'Event conflict detected',
+      });
+    }
+
+    // Re-throw other errors to be handled by global error handler
+    throw error;
+  }
 });
 
 // @desc    Update event by organizer
@@ -103,19 +133,36 @@ const updateEventByOrganizer = asyncHandler(async (req, res) => {
   const updateData = req.body;
   const userId = req.user._id;
 
-  const event = await eventService.updateEventByOrganizer(
-    id,
-    updateData,
-    userId
-  );
+  try {
+    const event = await eventService.updateEventByOrganizer(
+      id,
+      updateData,
+      userId
+    );
 
-  logger.info(`Event updated by organizer: ${event.title} - ${req.user.email}`);
+    logger.info(
+      `Event updated by organizer: ${event.title} - ${req.user.email}`
+    );
 
-  res.json({
-    success: true,
-    message: 'Event updated successfully',
-    data: { event },
-  });
+    res.json({
+      success: true,
+      message: 'Event updated successfully',
+      data: { event },
+    });
+  } catch (error) {
+    // Handle conflict errors specifically
+    if (error.statusCode === 409 && error.conflictDetails) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        conflictDetails: error.conflictDetails,
+        error: 'Event conflict detected',
+      });
+    }
+
+    // Re-throw other errors to be handled by global error handler
+    throw error;
+  }
 });
 
 // @desc    Delete event (Admin only)
@@ -312,6 +359,39 @@ const updateEventPencilHoldStatus = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Check for event conflicts
+// @route   POST /api/events/check-conflicts
+// @access  Private
+const checkEventConflicts = asyncHandler(async (req, res) => {
+  const eventData = req.body;
+  const { excludeEventId } = req.query;
+
+  try {
+    const conflictCheck = await eventService.checkEventConflicts(
+      eventData,
+      excludeEventId
+    );
+
+    res.json({
+      success: true,
+      data: {
+        hasConflict: conflictCheck.hasConflict,
+        conflicts: conflictCheck.conflicts,
+        conflictType: conflictCheck.conflictType,
+        message: conflictCheck.message,
+        suggestions: conflictCheck.suggestions,
+      },
+    });
+  } catch (error) {
+    logger.error('Error checking event conflicts:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check event conflicts',
+      error: error.message,
+    });
+  }
+});
+
 export {
   getEvents,
   getEventById,
@@ -328,4 +408,5 @@ export {
   restoreEvent,
   unpublishEvent,
   updateEventPencilHoldStatus,
+  checkEventConflicts,
 };

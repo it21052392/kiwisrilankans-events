@@ -2,6 +2,8 @@ import { Event } from '../models/event.model.js';
 import { Category } from '../models/category.model.js';
 import { PencilHold } from '../models/pencilHold.model.js';
 import { uploadService } from './uploads.service.js';
+import { conflictDetectionService } from './conflictDetection.service.js';
+import { logger } from '../config/logger.js';
 
 class EventService {
   async getEvents({
@@ -126,6 +128,27 @@ class EventService {
   }
 
   async createEvent(eventData) {
+    // Check for conflicts before creating event
+    const conflictCheck =
+      await conflictDetectionService.checkEventConflicts(eventData);
+
+    if (conflictCheck.hasConflict) {
+      const suggestions =
+        await conflictDetectionService.getAlternativeSuggestions(
+          eventData,
+          conflictCheck.conflicts
+        );
+
+      const error = new Error(conflictCheck.message);
+      error.conflictDetails = {
+        conflicts: conflictCheck.conflicts,
+        conflictType: conflictCheck.conflictType,
+        suggestions: suggestions,
+      };
+      error.statusCode = 409; // Conflict status code
+      throw error;
+    }
+
     const event = await Event.create(eventData);
 
     // Update category event count
@@ -137,6 +160,12 @@ class EventService {
   }
 
   async updateEvent(id, updateData) {
+    // Get existing event data
+    const existingEvent = await Event.findById(id);
+    if (!existingEvent) {
+      throw new Error('Event not found');
+    }
+
     // Validate dates if both are being updated
     if (updateData.startDate && updateData.endDate) {
       const startDate = new Date(updateData.startDate);
@@ -146,14 +175,43 @@ class EventService {
       }
     }
 
+    // Merge existing data with update data for conflict checking
+    const mergedEventData = {
+      ...existingEvent.toObject(),
+      ...updateData,
+      location: {
+        ...existingEvent.location.toObject(),
+        ...updateData.location,
+      },
+    };
+
+    // Check for conflicts before updating event
+    const conflictCheck = await conflictDetectionService.checkEventConflicts(
+      mergedEventData,
+      id
+    );
+
+    if (conflictCheck.hasConflict) {
+      const suggestions =
+        await conflictDetectionService.getAlternativeSuggestions(
+          mergedEventData,
+          conflictCheck.conflicts
+        );
+
+      const error = new Error(conflictCheck.message);
+      error.conflictDetails = {
+        conflicts: conflictCheck.conflicts,
+        conflictType: conflictCheck.conflictType,
+        suggestions: suggestions,
+      };
+      error.statusCode = 409; // Conflict status code
+      throw error;
+    }
+
     const event = await Event.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: false, // Disable validators to avoid the field-level validation issue
     }).populate('category', 'name color icon');
-
-    if (!event) {
-      throw new Error('Event not found');
-    }
 
     return event;
   }
@@ -177,6 +235,39 @@ class EventService {
       if (endDate < startDate) {
         throw new Error('End date must be on or after start date');
       }
+    }
+
+    // Merge existing data with update data for conflict checking
+    const mergedEventData = {
+      ...event.toObject(),
+      ...updateData,
+      location: {
+        ...event.location.toObject(),
+        ...updateData.location,
+      },
+    };
+
+    // Check for conflicts before updating event
+    const conflictCheck = await conflictDetectionService.checkEventConflicts(
+      mergedEventData,
+      id
+    );
+
+    if (conflictCheck.hasConflict) {
+      const suggestions =
+        await conflictDetectionService.getAlternativeSuggestions(
+          mergedEventData,
+          conflictCheck.conflicts
+        );
+
+      const error = new Error(conflictCheck.message);
+      error.conflictDetails = {
+        conflicts: conflictCheck.conflicts,
+        conflictType: conflictCheck.conflictType,
+        suggestions: suggestions,
+      };
+      error.statusCode = 409; // Conflict status code
+      throw error;
     }
 
     // Update the event with the new data and set updatedBy
@@ -212,7 +303,7 @@ class EventService {
         );
 
         if (!deleteResult.success) {
-          console.warn(
+          logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
           );
@@ -221,7 +312,7 @@ class EventService {
 
       // Delete associated pencil holds
       const pencilHoldResult = await PencilHold.deleteMany({ event: id });
-      console.log(
+      logger.info(
         `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
       );
 
@@ -235,7 +326,7 @@ class EventService {
 
       return event;
     } catch (error) {
-      console.error(`Error deleting event ${id}:`, error);
+      logger.error(`Error deleting event ${id}:`, error);
       throw new Error(`Failed to delete event: ${error.message}`);
     }
   }
@@ -257,7 +348,7 @@ class EventService {
         );
 
         if (!deleteResult.success) {
-          console.warn(
+          logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
           );
@@ -266,7 +357,7 @@ class EventService {
 
       // Delete associated pencil holds
       const pencilHoldResult = await PencilHold.deleteMany({ event: id });
-      console.log(
+      logger.info(
         `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
       );
 
@@ -275,7 +366,7 @@ class EventService {
 
       return { message: 'Event deleted successfully' };
     } catch (error) {
-      console.error(`Error soft deleting event ${id}:`, error);
+      logger.error(`Error soft deleting event ${id}:`, error);
       throw new Error(`Failed to delete event: ${error.message}`);
     }
   }
@@ -337,7 +428,7 @@ class EventService {
         );
 
         if (!deleteResult.success) {
-          console.warn(
+          logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
           );
@@ -346,7 +437,7 @@ class EventService {
 
       // Delete associated pencil holds
       const pencilHoldResult = await PencilHold.deleteMany({ event: id });
-      console.log(
+      logger.info(
         `Deleted ${pencilHoldResult.deletedCount} pencil holds for event ${id}`
       );
 
@@ -360,7 +451,7 @@ class EventService {
 
       return deletedEvent;
     } catch (error) {
-      console.error(`Error deleting event ${id} by organizer:`, error);
+      logger.error(`Error deleting event ${id} by organizer:`, error);
       throw new Error(`Failed to delete event: ${error.message}`);
     }
   }
@@ -451,7 +542,7 @@ class EventService {
       .sort({ startDate: 1 });
 
     // Debug logging
-    console.log('Calendar Events Debug:', {
+    logger.info('Calendar Events Debug:', {
       query,
       eventsCount: events.length,
       events: events.map(e => ({
@@ -634,6 +725,13 @@ class EventService {
 
     await event.save();
     return event;
+  }
+
+  async checkEventConflicts(eventData, excludeEventId = null) {
+    return await conflictDetectionService.checkEventConflicts(
+      eventData,
+      excludeEventId
+    );
   }
 }
 
