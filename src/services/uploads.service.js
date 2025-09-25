@@ -41,8 +41,10 @@ class UploadService {
         throw new Error('Invalid file object received');
       }
 
+      // Convert userId to string if it's an ObjectId
+      const userIdStr = userId?.toString() || 'unknown';
       const fileExtension = file.originalname.split('.').pop();
-      const fileName = `${type}/${userId}/${uuidv4()}.${fileExtension}`;
+      const fileName = `${type}/${userIdStr}/${uuidv4()}.${fileExtension}`;
 
       // Add image-specific metadata for event images
       const metadata = {
@@ -80,7 +82,13 @@ class UploadService {
         logger.warn(
           'AWS S3 credentials not configured. Using local file storage for development.'
         );
-        return await this.uploadToLocal(file, fileName, metadata, type, userId);
+        return await this.uploadToLocal(
+          file,
+          fileName,
+          metadata,
+          type,
+          userIdStr
+        );
       }
 
       const uploadParams = {
@@ -129,7 +137,7 @@ class UploadService {
     }
   }
 
-  async uploadToLocal(file, fileName, metadata, type, userId) {
+  async uploadToLocal(file, fileName, metadata, type, userIdStr) {
     try {
       // Create uploads directory if it doesn't exist
       const uploadsDir = path.join(__dirname, '../../uploads', type);
@@ -138,7 +146,7 @@ class UploadService {
       }
 
       // Create user directory
-      const userDir = path.join(uploadsDir, userId);
+      const userDir = path.join(uploadsDir, userIdStr);
       if (!fs.existsSync(userDir)) {
         fs.mkdirSync(userDir, { recursive: true });
       }
@@ -147,8 +155,14 @@ class UploadService {
       const filePath = path.join(userDir, path.basename(fileName));
       fs.writeFileSync(filePath, file.buffer);
 
-      // Generate local URL - use the correct port for the backend
-      const fileUrl = `http://localhost:${env.PORT || 3000}/uploads/${type}/${userId}/${path.basename(fileName)}`;
+      // Generate local URL - use the correct host and port
+      const baseUrl =
+        process.env.NODE_ENV === 'production'
+          ? env.CORS_ORIGIN
+            ? env.CORS_ORIGIN.split(',')[0].replace(':5000', ':3000')
+            : `http://localhost:${env.PORT || 3000}`
+          : `http://localhost:${env.PORT || 3000}`;
+      const fileUrl = `${baseUrl}/uploads/${type}/${userIdStr}/${path.basename(fileName)}`;
 
       logger.info(`File uploaded locally: ${filePath}`);
       logger.info(`File URL: ${fileUrl}`);
@@ -161,7 +175,7 @@ class UploadService {
         size: file.size,
         type: file.mimetype,
         uploadType: type,
-        uploadedBy: userId,
+        uploadedBy: userIdStr,
         uploadedAt: new Date(),
         dimensions:
           metadata.width && metadata.height
@@ -178,8 +192,10 @@ class UploadService {
   }
 
   async uploadMultiple(files, type = 'general', userId) {
+    // Convert userId to string if it's an ObjectId
+    const userIdStr = userId?.toString() || 'unknown';
     const uploadPromises = files.map(file =>
-      this.uploadSingle(file, type, userId)
+      this.uploadSingle(file, type, userIdStr)
     );
     return await Promise.all(uploadPromises);
   }
