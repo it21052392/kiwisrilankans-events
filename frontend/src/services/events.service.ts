@@ -167,6 +167,16 @@ export const eventsService = {
     };
   }> {
     const queryParams = excludeEventId ? { excludeEventId } : {};
+    const endpoint = '/api/events/check-conflicts';
+    const url = new URL(endpoint, window.location.origin);
+    
+    // Add query parameters to URL
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.append(key, String(value));
+      }
+    });
+    
     return apiClient.post<{
       success: boolean;
       data: {
@@ -176,6 +186,6 @@ export const eventsService = {
         message: string;
         suggestions: any;
       };
-    }>('/api/events/check-conflicts', data, queryParams);
+    }>(url.pathname + url.search, data);
   },
 };
