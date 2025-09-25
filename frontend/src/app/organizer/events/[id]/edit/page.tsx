@@ -31,6 +31,7 @@ import { useEvent, useUpdateEventByOrganizer } from '@/hooks/queries/useEvents';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
 import toast from 'react-hot-toast';
+import { processValidationErrors, getErrorMessage } from '@/lib/validation-utils';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -397,8 +398,25 @@ export default function EditEventPage() {
       
       toast.success('Event updated successfully!');
       router.push('/organizer/events');
-    } catch (error) {
-      toast.error('Failed to update event. Please try again.');
+    } catch (error: any) {
+      console.error('Event update error:', error);
+      
+      // Handle validation errors from backend
+      const { frontendErrors, firstError, hasValidationErrors } = processValidationErrors(error);
+      
+      if (hasValidationErrors) {
+        // Update form errors with backend validation errors
+        setErrors(prev => ({ ...prev, ...frontendErrors }));
+        
+        // Show first error as toast
+        if (firstError) {
+          toast.error(`Validation Error: ${firstError}`);
+        }
+      } else {
+        // Generic error message
+        const errorMessage = getErrorMessage(error, 'Failed to update event. Please try again.');
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

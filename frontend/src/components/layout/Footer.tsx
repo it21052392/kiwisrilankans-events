@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { CONTACT_INFO } from '@/lib/contact-info';
 
 export function Footer() {
   return (
@@ -21,7 +22,7 @@ export function Footer() {
               />
             </div>
             <p className="text-sm text-green-100">
-              Connecting the Sri Lankan community in New Zealand through meaningful events and experiences.
+              {CONTACT_INFO.ORGANIZATION.DESCRIPTION}
             </p>
           </div>
 
@@ -85,15 +86,25 @@ export function Footer() {
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-green-300" />
-                <span className="text-sm text-green-100">info@kiwisrilankans.com</span>
+                <a 
+                  href={`mailto:${CONTACT_INFO.CONTACT.EMAIL}`}
+                  className="text-sm text-green-100 hover:text-green-300 transition-colors"
+                >
+                  {CONTACT_INFO.CONTACT.EMAIL}
+                </a>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-green-300" />
-                <span className="text-sm text-green-100">+64 21 123 4567</span>
+                <a 
+                  href={`tel:${CONTACT_INFO.CONTACT.PHONE}`}
+                  className="text-sm text-green-100 hover:text-green-300 transition-colors"
+                >
+                  {CONTACT_INFO.CONTACT.PHONE}
+                </a>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-green-300" />
-                <span className="text-sm text-green-100">Auckland, New Zealand</span>
+                <span className="text-sm text-green-100">{CONTACT_INFO.CONTACT.ADDRESS.FULL}</span>
               </div>
             </div>
           </div>

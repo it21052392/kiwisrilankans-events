@@ -33,6 +33,8 @@ import { eventsService, CreateEventData } from '@/services/events.service';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
 import toast from 'react-hot-toast';
+import { processValidationErrors, getErrorMessage } from '@/lib/validation-utils';
+import { CONTACT_INFO } from '@/lib/contact-info';
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -73,7 +75,7 @@ export default function CreateEventPage() {
     requirements: [],
     contactInfo: {
       name: user?.name || '',
-      email: user?.email || '',
+      email: user?.email || CONTACT_INFO.CONTACT.EMAIL,
       phone: ''
     }
   });
@@ -293,8 +295,25 @@ export default function CreateEventPage() {
       } else {
         throw new Error('Failed to create event');
       }
-    } catch (error) {
-      toast.error('Failed to create event. Please try again.');
+    } catch (error: any) {
+      console.error('Event creation error:', error);
+      
+      // Handle validation errors from backend
+      const { frontendErrors, firstError, hasValidationErrors } = processValidationErrors(error);
+      
+      if (hasValidationErrors) {
+        // Update form errors with backend validation errors
+        setErrors(prev => ({ ...prev, ...frontendErrors }));
+        
+        // Show first error as toast
+        if (firstError) {
+          toast.error(`Validation Error: ${firstError}`);
+        }
+      } else {
+        // Generic error message
+        const errorMessage = getErrorMessage(error, 'Failed to create event. Please try again.');
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
