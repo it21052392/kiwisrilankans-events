@@ -20,11 +20,16 @@ import {
   Gamepad2,
   Camera,
   Briefcase,
-  Home
+  Home,
+  Laptop,
+  Palette,
+  MapPin,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
 const categoryIcons: Record<string, any> = {
+  // Original mappings
   'cultural': Heart,
   'food': Utensils,
   'music': Music,
@@ -34,6 +39,17 @@ const categoryIcons: Record<string, any> = {
   'photography': Camera,
   'business': Briefcase,
   'home': Home,
+  // New popular category mappings
+  'food & dining': Utensils,
+  'music & entertainment': Music,
+  'health & wellness': Heart,
+  'business & networking': Briefcase,
+  'family & kids': Home, // Using Home icon for family
+  'technology': Laptop,
+  'arts & crafts': Palette,
+  'travel & tourism': MapPin,
+  'volunteer & charity': Users, // Using Users icon for charity/volunteer
+  'fashion & beauty': Sparkles,
   'default': Calendar,
 };
 

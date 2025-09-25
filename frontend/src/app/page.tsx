@@ -27,11 +27,15 @@ import {
   BookOpen,
   Gamepad2,
   Briefcase,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Laptop,
+  Palette,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const categoryIcons: Record<string, any> = {
+  // Original mappings
   'cultural': Heart,
   'food': Utensils,
   'music': Music,
@@ -40,6 +44,17 @@ const categoryIcons: Record<string, any> = {
   'education': BookOpen,
   'business': Briefcase,
   'home': HomeIcon,
+  // New popular category mappings
+  'food & dining': Utensils,
+  'music & entertainment': Music,
+  'health & wellness': Heart,
+  'business & networking': Briefcase,
+  'family & kids': HomeIcon,
+  'technology': Laptop,
+  'arts & crafts': Palette,
+  'travel & tourism': MapPin,
+  'volunteer & charity': Users,
+  'fashion & beauty': Sparkles,
   'default': Calendar,
 };
 
