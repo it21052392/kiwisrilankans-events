@@ -10,6 +10,7 @@ import { Types } from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
 
@@ -57,8 +58,15 @@ class UploadService {
           const dimensions = await this.getImageDimensions(file.buffer);
           metadata.width = String(dimensions.width || 0);
           metadata.height = String(dimensions.height || 0);
+          logger.info(
+            `Image dimensions extracted: ${dimensions.width}x${dimensions.height}`
+          );
         } catch (error) {
-          logger.warn('Could not extract image dimensions:', error);
+          logger.warn('Could not extract image dimensions:', error.message);
+          // Don't fail the upload if we can't read dimensions
+          // Just log the warning and continue
+          metadata.width = '0';
+          metadata.height = '0';
         }
       }
 
@@ -481,13 +489,26 @@ class UploadService {
     }
   }
 
-  async getImageDimensions(_buffer) {
-    return new Promise((resolve, _reject) => {
-      // This is a simplified implementation
-      // In a real application, you'd use a library like 'sharp' or 'jimp'
-      // For now, we'll return default dimensions
-      resolve({ width: 1920, height: 1080 });
-    });
+  async getImageDimensions(buffer) {
+    try {
+      if (!buffer || buffer.length === 0) {
+        throw new Error('Empty buffer provided');
+      }
+
+      const metadata = await sharp(buffer).metadata();
+
+      if (!metadata.width || !metadata.height) {
+        throw new Error('Could not extract dimensions from image');
+      }
+
+      return {
+        width: metadata.width,
+        height: metadata.height,
+      };
+    } catch (error) {
+      logger.warn('Failed to get image dimensions:', error.message);
+      throw new Error(`Failed to read image dimensions: ${error.message}`);
+    }
   }
 }
 

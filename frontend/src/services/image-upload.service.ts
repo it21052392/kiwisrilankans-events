@@ -62,7 +62,7 @@ export class ImageUploadService {
       errors.push(`File size too large. Maximum size: ${this.formatFileSize(opts.maxSize)}`);
     }
 
-    // Check image dimensions
+    // Check image dimensions with fallback for production
     try {
       const dimensions = await this.getImageDimensions(file);
       if (dimensions.width > opts.maxWidth) {
@@ -77,7 +77,16 @@ export class ImageUploadService {
         warnings.push('Large image detected. Consider resizing for better performance.');
       }
     } catch (error) {
-      errors.push('Unable to read image dimensions. File may be corrupted.');
+      // In production, be more lenient with dimension validation
+      // Log the error but don't fail the upload
+      console.warn('Could not read image dimensions:', error);
+      
+      // Only add as warning in production, not as error
+      if (process.env.NODE_ENV === 'production') {
+        warnings.push('Could not verify image dimensions. Upload will proceed but image may need manual verification.');
+      } else {
+        errors.push('Unable to read image dimensions. File may be corrupted.');
+      }
     }
 
     return {
@@ -92,12 +101,70 @@ export class ImageUploadService {
    */
   private static getImageDimensions(file: File): Promise<{ width: number; height: number }> {
     return new Promise((resolve, reject) => {
+      // Create a more robust image loading approach
       const img = new Image();
-      img.onload = () => {
-        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      let objectUrl: string | null = null;
+      
+      const cleanup = () => {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
       };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        try {
+          const dimensions = { 
+            width: img.naturalWidth || img.width, 
+            height: img.naturalHeight || img.height 
+          };
+          cleanup();
+          resolve(dimensions);
+        } catch (error) {
+          cleanup();
+          reject(new Error('Failed to read image dimensions'));
+        }
+      };
+      
+      img.onerror = () => {
+        cleanup();
+        reject(new Error('Failed to load image'));
+      };
+      
+      // Add timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Image loading timeout'));
+      }, 10000); // 10 second timeout
+      
+      img.onload = () => {
+        clearTimeout(timeout);
+        try {
+          const dimensions = { 
+            width: img.naturalWidth || img.width, 
+            height: img.naturalHeight || img.height 
+          };
+          cleanup();
+          resolve(dimensions);
+        } catch (error) {
+          cleanup();
+          reject(new Error('Failed to read image dimensions'));
+        }
+      };
+      
+      img.onerror = () => {
+        clearTimeout(timeout);
+        cleanup();
+        reject(new Error('Failed to load image'));
+      };
+      
+      try {
+        objectUrl = URL.createObjectURL(file);
+        img.src = objectUrl;
+      } catch (error) {
+        cleanup();
+        reject(new Error('Failed to create object URL'));
+      }
     });
   }
 

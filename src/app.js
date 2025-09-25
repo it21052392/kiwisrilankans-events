@@ -20,14 +20,24 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const corsOrigins = [
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://127.0.0.1:5000',
+  'http://127.0.0.1:3000',
+];
+
+// Add production origins if they exist
+if (env.CORS_ORIGIN) {
+  const productionOrigins = env.CORS_ORIGIN.split(',').map(origin =>
+    origin.trim()
+  );
+  corsOrigins.push(...productionOrigins);
+}
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:5000',
-      'http://localhost:3000',
-      'http://127.0.0.1:5000',
-      'http://127.0.0.1:3000',
-    ],
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -76,10 +86,9 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file serving for local uploads (development only)
-if (process.env.NODE_ENV === 'development') {
-  app.use('/uploads', express.static('uploads'));
-}
+// Static file serving for local uploads
+// Serve uploads in both development and production if using local storage
+app.use('/uploads', express.static('uploads'));
 
 // Welcome route
 app.get('/', (req, res) => {
