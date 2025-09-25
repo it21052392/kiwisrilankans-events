@@ -65,14 +65,6 @@ export default function OrganizerEventsPage() {
   const events = eventsData?.data?.events || [];
   const categories = categoriesData?.data?.categories || [];
 
-  // Debug logging
-  console.log('Organizer Events Debug:', {
-    isAuthenticated,
-    user: user ? { id: user.id, role: user.role, name: user.name } : null,
-    eventsLoading,
-    eventsCount: events.length,
-    eventsData: eventsData?.data
-  });
 
   const handleDeleteEvent = async (eventId: string) => {
     setIsDeleting(eventId);
@@ -81,7 +73,6 @@ export default function OrganizerEventsPage() {
       toast.success('Event deleted successfully');
       refetch();
     } catch (error) {
-      console.error('Error deleting event:', error);
       toast.error('Failed to delete event. Please try again.');
     } finally {
       setIsDeleting(null);

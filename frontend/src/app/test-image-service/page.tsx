@@ -34,7 +34,6 @@ export default function TestImageServicePage() {
 
     try {
       // Test 1: File Validation
-      console.log('Testing file validation...');
       const testFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       const validation = await ImageUploadService.validateImage(testFile, {
         maxSize: 5 * 1024 * 1024,
@@ -47,7 +46,6 @@ export default function TestImageServicePage() {
       }));
 
       // Test 2: Image Optimization
-      console.log('Testing image optimization...');
       try {
         const optimizedFile = await ImageUploadService.optimizeImage(testFile, {
           maxWidth: 2000,
@@ -59,7 +57,6 @@ export default function TestImageServicePage() {
           imageOptimization: optimizedFile instanceof File
         }));
       } catch (error) {
-        console.warn('Image optimization test failed:', error);
         setTestResults(prev => ({
           ...prev,
           imageOptimization: false
@@ -67,7 +64,6 @@ export default function TestImageServicePage() {
       }
 
       // Test 3: Service Methods
-      console.log('Testing service methods...');
       const isImageFile = ImageUploadService.isImageFile(testFile);
       const fileExtension = ImageUploadService.getFileExtension('test.jpg');
       const formattedSize = ImageUploadService.formatFileSize(1024 * 1024);
@@ -78,7 +74,6 @@ export default function TestImageServicePage() {
       }));
 
     } catch (error) {
-      console.error('Test error:', error);
       setTestResults(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Unknown error'

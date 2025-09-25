@@ -202,7 +202,6 @@ export default function AdminCreateEventPage() {
         throw new Error('Failed to create event');
       }
     } catch (error) {
-      console.error('Error creating event:', error);
       toast.error('Failed to create event. Please try again.');
     } finally {
       setIsSubmitting(false);

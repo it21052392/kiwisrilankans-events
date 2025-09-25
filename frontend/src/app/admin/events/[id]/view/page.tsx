@@ -84,7 +84,6 @@ export default function AdminEventDetailsPage() {
       await approveEventMutation.mutateAsync(event._id);
       router.push('/admin/events');
     } catch (error) {
-      console.error('Failed to approve event:', error);
     }
   };
 
@@ -98,7 +97,6 @@ export default function AdminEventDetailsPage() {
       await rejectEventMutation.mutateAsync({ id: event._id, reason });
       router.push('/admin/events');
     } catch (error) {
-      console.error('Failed to reject event:', error);
     }
   };
 

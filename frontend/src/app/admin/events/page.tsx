@@ -83,7 +83,6 @@ export default function AdminEventsPage() {
       toast.success('Event approved successfully');
       refetch(); // Refresh the events list
     } catch (error) {
-      console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
     }
   };
@@ -94,7 +93,6 @@ export default function AdminEventsPage() {
       toast.success('Event rejected successfully');
       refetch(); // Refresh the events list
     } catch (error) {
-      console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');
     }
   };

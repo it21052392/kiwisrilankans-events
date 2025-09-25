@@ -36,12 +36,6 @@ export default function EventDetailPage() {
   const event = eventData?.data?.event;
 
   // Debug: Log event data to console
-  console.log('Event data:', eventData);
-  console.log('Event:', event);
-  console.log('Event images:', event?.images);
-  console.log('First image URL:', event?.images?.[0]?.url);
-  console.log('Image URL type:', typeof event?.images?.[0]?.url);
-  console.log('Is S3 URL:', event?.images?.[0]?.url?.includes('.s3.'));
 
   if (isLoading) {
     return (
@@ -86,7 +80,6 @@ export default function EventDetailPage() {
           url: window.location.href,
         });
       } catch (error) {
-        console.log('Error sharing:', error);
       }
     } else {
       // Fallback: copy to clipboard
@@ -168,9 +161,7 @@ export default function EventDetailPage() {
                   src={event.images[0].url} 
                   alt={event.images[0].alt || event.title}
                   className="w-full h-full object-cover"
-                  onLoad={() => console.log('Image loaded successfully:', event.images[0].url)}
                   onError={(e) => {
-                    console.error('Image failed to load:', event.images[0].url, e);
                     // Hide the image and show placeholder if it fails to load
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');

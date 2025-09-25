@@ -118,7 +118,6 @@ export default function AuthCallbackPage() {
           }, 2000);
 
         } catch (error) {
-          console.error('Error getting user information:', error);
           setStatus('error');
           setMessage('Failed to complete authentication. Please try again.');
           toast({
@@ -134,7 +133,6 @@ export default function AuthCallbackPage() {
         }
 
       } catch (error) {
-        console.error('Auth callback error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred. Please try again.');
         toast({

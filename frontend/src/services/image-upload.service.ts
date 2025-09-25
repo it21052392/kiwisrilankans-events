@@ -79,7 +79,6 @@ export class ImageUploadService {
     } catch (error) {
       // In production, be more lenient with dimension validation
       // Log the error but don't fail the upload
-      console.warn('Could not read image dimensions:', error);
       
       // Only add as warning in production, not as error
       if (process.env.NODE_ENV === 'production') {
@@ -227,7 +226,6 @@ export class ImageUploadService {
         img.src = URL.createObjectURL(file);
       });
     } catch (error) {
-      console.warn('Image optimization failed, using original:', error);
       return file;
     }
   }
@@ -308,16 +306,13 @@ export class ImageUploadService {
    * Delete image
    */
   static async deleteImage(imageId: string): Promise<void> {
-    console.log('ImageUploadService.deleteImage called with ID:', imageId);
     try {
-      const response = await apiClient.delete(`/api/uploads/${imageId}`);
-      console.log('Delete response:', response);
+      const response = await apiClient.delete(`/api/uploads/${imageId}`) as { success: boolean; message?: string };
       
       if (!response.success) {
         throw new Error(response.message || 'Failed to delete image');
       }
     } catch (error) {
-      console.error('Delete image error:', error);
       throw new Error(error instanceof Error ? error.message : 'Failed to delete image');
     }
   }

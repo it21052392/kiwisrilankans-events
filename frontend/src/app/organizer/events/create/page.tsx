@@ -283,7 +283,6 @@ export default function CreateEventPage() {
             });
             toast.success('Event created and pencil hold created successfully!');
           } catch (pencilHoldError) {
-            console.error('Error creating pencil hold:', pencilHoldError);
             toast.error('Event created but failed to create pencil hold');
           }
         } else {
@@ -295,7 +294,6 @@ export default function CreateEventPage() {
         throw new Error('Failed to create event');
       }
     } catch (error) {
-      console.error('Error creating event:', error);
       toast.error('Failed to create event. Please try again.');
     } finally {
       setIsSubmitting(false);

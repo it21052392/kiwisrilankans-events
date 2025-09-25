@@ -49,7 +49,6 @@ class ApiClient {
           // Retry the request with the new token
           return this.request<T>(endpoint, options, retryCount + 1);
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
           // If refresh fails, redirect to login
           useAuthStore.getState().logout();
           throw new ApiError('Authentication expired. Please login again.', 401);

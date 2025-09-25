@@ -50,15 +50,6 @@ export default function CalendarPage() {
   const eventsByDate = eventsData?.data?.eventsByDate || {};
   const categories = categoriesData?.data?.categories || [];
 
-  // Debug logging
-  console.log('Calendar Debug:', {
-    eventsData,
-    events,
-    eventsByDate,
-    eventsLoading,
-    eventsError,
-    debouncedFilters
-  });
 
   const handleFilterChange = useCallback((key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -237,13 +228,6 @@ export default function CalendarPage() {
     const dayEvents = eventsByDate[dateString] || [];
     
     // Debug logging for date matching
-    console.log('getEventsForDate Debug:', {
-      date,
-      dateString,
-      dayEvents,
-      eventsByDateKeys: Object.keys(eventsByDate),
-      allEvents: events
-    });
     
     return dayEvents;
   };

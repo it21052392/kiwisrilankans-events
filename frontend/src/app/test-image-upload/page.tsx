@@ -14,19 +14,15 @@ export default function TestImageUploadPage() {
 
   const handleImagesChange = (images: ImageUploadResult[]) => {
     setUploadedImages(images);
-    console.log('Images updated:', images);
   };
 
   const handleUploadStart = () => {
-    console.log('Upload started');
   };
 
   const handleUploadComplete = (images: ImageUploadResult[]) => {
-    console.log('Upload completed:', images);
   };
 
   const handleUploadError = (error: string) => {
-    console.error('Upload error:', error);
   };
 
   return (
@@ -91,7 +87,6 @@ export default function TestImageUploadPage() {
                   allowFullscreen={true}
                   aspectRatio="video"
                   onImageClick={(image, index) => {
-                    console.log('Image clicked:', image, index);
                   }}
                 />
               )}

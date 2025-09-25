@@ -122,12 +122,6 @@ export default function EditEventPage() {
       };
       
       // Debug: Log the original dates and formatted dates
-      console.log('Original startDate:', event.startDate);
-      console.log('Original endDate:', event.endDate);
-      console.log('Original startTime:', event.startTime);
-      console.log('Original endTime:', event.endTime);
-      console.log('Formatted startDate:', formatDateTimeForInput(event.startDate, event.startTime));
-      console.log('Formatted endDate:', formatDateTimeForInput(event.endDate, event.endTime));
       
       setFormData({
         title: event.title || '',
@@ -358,7 +352,6 @@ export default function EditEventPage() {
     try {
       // Delete removed images from S3
       if (removedImageUrls.length > 0) {
-        console.log('Deleting removed images from S3:', removedImageUrls);
         try {
           // Import the ImageUploadService to delete images by URL
           const { ImageUploadService } = await import('@/services/image-upload.service');
@@ -376,14 +369,11 @@ export default function EditEventPage() {
               });
               
               if (!response.ok) {
-                console.warn(`Failed to delete image: ${imageUrl}`);
               }
             } catch (error) {
-              console.warn(`Error deleting image ${imageUrl}:`, error);
             }
           }
         } catch (error) {
-          console.warn('Error deleting removed images:', error);
           // Continue with event update even if image deletion fails
         }
       }
@@ -408,7 +398,6 @@ export default function EditEventPage() {
       toast.success('Event updated successfully!');
       router.push('/organizer/events');
     } catch (error) {
-      console.error('Error updating event:', error);
       toast.error('Failed to update event. Please try again.');
     } finally {
       setIsSubmitting(false);

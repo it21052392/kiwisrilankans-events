@@ -19,12 +19,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Check if user is already authenticated
         await checkAuth();
       } catch (error) {
-        console.error('Auth initialization failed:', error);
         // If checkAuth fails, try to refresh token
         try {
           await refreshToken();
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
           // If both fail, user is not authenticated
         }
       } finally {

@@ -215,7 +215,6 @@ export default function AdminEditEventPage() {
       toast.success('Event updated successfully');
       router.push('/admin/events');
     } catch (error) {
-      console.error('Error updating event:', error);
       toast.error('Failed to update event. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -228,7 +227,6 @@ export default function AdminEditEventPage() {
       toast.success('Event approved successfully');
       router.push('/admin/events');
     } catch (error) {
-      console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
     }
   };
@@ -239,7 +237,6 @@ export default function AdminEditEventPage() {
       toast.success('Event rejected successfully');
       router.push('/admin/events');
     } catch (error) {
-      console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');
     }
   };
