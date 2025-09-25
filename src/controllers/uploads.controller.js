@@ -152,6 +152,30 @@ const getAllFiles = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Delete file by URL
+// @route   DELETE /api/uploads/delete-by-url
+// @access  Private
+const deleteFileByUrl = asyncHandler(async (req, res) => {
+  const { url } = req.body;
+  const userId = req.user._id;
+
+  if (!url) {
+    return res.status(400).json({
+      success: false,
+      message: 'URL is required',
+    });
+  }
+
+  const result = await uploadService.deleteFileByUrl(url, userId);
+
+  logger.info(`File deleted by URL: ${url} - ${req.user.email}`);
+
+  res.json({
+    success: result.success,
+    message: result.message || 'File deleted successfully',
+  });
+});
+
 // @desc    Clean up orphaned files
 // @route   POST /api/uploads/cleanup
 // @access  Private/Admin
@@ -173,6 +197,7 @@ export {
   getFileById,
   getMyFiles,
   deleteFile,
+  deleteFileByUrl,
   getDownloadUrl,
   getAllFiles,
   cleanupOrphanedFiles,

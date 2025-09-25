@@ -312,9 +312,13 @@ export class ImageUploadService {
     try {
       const response = await apiClient.delete(`/api/uploads/${imageId}`);
       console.log('Delete response:', response);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to delete image');
+      }
     } catch (error) {
       console.error('Delete image error:', error);
-      throw error;
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete image');
     }
   }
 
@@ -377,6 +381,59 @@ export class ImageUploadService {
    */
   static getFileExtension(filename: string): string {
     return filename.split('.').pop()?.toLowerCase() || '';
+  }
+
+  /**
+   * Check if URL is from S3
+   */
+  static isS3Url(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.includes('.s3.') && urlObj.hostname.includes('.amazonaws.com');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if image URL is accessible
+   */
+  static async checkImageAccessibility(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get optimized image URL for display
+   */
+  static getOptimizedImageUrl(url: string, width?: number, height?: number): string {
+    if (!this.isS3Url(url)) {
+      return url;
+    }
+
+    // For S3 URLs, we can add query parameters for optimization
+    // This would depend on your S3 setup and whether you have CloudFront
+    const urlObj = new URL(url);
+    
+    if (width || height) {
+      urlObj.searchParams.set('w', width?.toString() || '');
+      urlObj.searchParams.set('h', height?.toString() || '');
+    }
+    
+    return urlObj.toString();
+  }
+
+  /**
+   * Handle image load error
+   */
+  static handleImageError(event: React.SyntheticEvent<HTMLImageElement, Event>): void {
+    const img = event.currentTarget;
+    img.src = '/images/placeholder-image.svg'; // Fallback image
+    img.alt = 'Image failed to load';
   }
 }
 

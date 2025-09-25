@@ -240,10 +240,10 @@ export default function CreateEventPage() {
     setUploadedImages(images);
     setFormData(prev => ({
       ...prev,
-      images: images.map(img => ({
+      images: images.map((img, index) => ({
         url: img.url,
         alt: img.originalName,
-        isPrimary: false // ImageUploadResult doesn't have isPrimary property
+        isPrimary: index === 0 // First image is primary
       }))
     }));
   };
@@ -256,11 +256,16 @@ export default function CreateEventPage() {
 
     setIsSubmitting(true);
     try {
-      // Format dates to include timezone information for backend validation
+      // Format dates and extract times for backend
+      const startDateTime = formData.startDate ? new Date(formData.startDate) : null;
+      const endDateTime = formData.endDate ? new Date(formData.endDate) : null;
+      
       const eventData = {
         ...formData,
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
+        startDate: startDateTime ? startDateTime.toISOString() : formData.startDate,
+        endDate: endDateTime ? endDateTime.toISOString() : formData.endDate,
+        startTime: startDateTime ? startDateTime.toTimeString().slice(0, 5) : undefined,
+        endTime: endDateTime ? endDateTime.toTimeString().slice(0, 5) : undefined,
       };
 
       const response = await createEventMutation.mutateAsync(eventData);

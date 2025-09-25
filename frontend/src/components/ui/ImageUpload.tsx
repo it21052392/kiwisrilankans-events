@@ -54,6 +54,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  // Get optimized image URL for better performance
+  const optimizedUrl = ImageUploadService.getOptimizedImageUrl(image.url, 400, 300);
+
   console.log('ImagePreview props:', {
     imageId: image.id,
     showActions,
@@ -80,14 +83,15 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
           </div>
         ) : (
           <img
-            src={image.url}
+            src={optimizedUrl}
             alt={image.originalName}
             className={cn(
               "w-full h-full object-cover transition-opacity duration-200",
               isLoading ? "opacity-0" : "opacity-100"
             )}
             onLoad={() => setIsLoading(false)}
-            onError={() => {
+            onError={(e) => {
+              ImageUploadService.handleImageError(e);
               setIsLoading(false);
               setHasError(true);
             }}
@@ -227,12 +231,25 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       console.log('Attempting to delete image with ID:', imageId);
       console.log('Current images:', images);
       
-      await ImageUploadService.deleteImage(imageId);
-      const newImages = images.filter(img => img.id !== imageId);
-      console.log('New images after deletion:', newImages);
+      // Check if this is an existing image (temporary ID) or a newly uploaded image
+      const isExistingImage = imageId.startsWith('existing-');
       
-      setImages(newImages);
-      toast.success('Image removed successfully');
+      if (isExistingImage) {
+        // For existing images, just remove from local state without calling API
+        console.log('Removing existing image from local state:', imageId);
+        const newImages = images.filter(img => img.id !== imageId);
+        console.log('New images after removal:', newImages);
+        setImages(newImages);
+        toast.success('Image removed successfully');
+      } else {
+        // For newly uploaded images, call the delete API
+        console.log('Deleting newly uploaded image from server:', imageId);
+        await ImageUploadService.deleteImage(imageId);
+        const newImages = images.filter(img => img.id !== imageId);
+        console.log('New images after deletion:', newImages);
+        setImages(newImages);
+        toast.success('Image deleted successfully');
+      }
     } catch (error) {
       console.error('Error deleting image:', error);
       toast.error('Failed to remove image');

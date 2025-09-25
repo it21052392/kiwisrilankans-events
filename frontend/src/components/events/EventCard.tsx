@@ -148,7 +148,7 @@ export function EventCard({
     return (
       <Link href={`/events/${event.slug || event._id}`}>
         <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden">
-          {event.images && event.images.length > 0 ? (
+          {event.images && event.images.length > 0 && event.images[0]?.url ? (
             <div className="aspect-video overflow-hidden">
               <img 
                 src={event.images[0].url} 
@@ -255,7 +255,7 @@ export function EventCard({
     <Link href={`/events/${event.slug || event._id}`}>
       <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
         <CardHeader>
-          {event.images && event.images.length > 0 ? (
+          {event.images && event.images.length > 0 && event.images[0]?.url ? (
             <div className="aspect-video rounded-lg mb-4 overflow-hidden">
               <img 
                 src={event.images[0].url} 
