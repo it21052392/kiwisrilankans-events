@@ -6,6 +6,7 @@ import {
   getFileById,
   getMyFiles,
   deleteFile,
+  deleteFileByUrl,
   getDownloadUrl,
   getAllFiles,
   cleanupOrphanedFiles,
@@ -69,6 +70,7 @@ router.post(
 router.get('/:id', validateParams(commonSchemas.mongoId), getFileById);
 router.get('/my-files', validateQuery(commonSchemas.pagination), getMyFiles);
 router.delete('/:id', validateParams(commonSchemas.mongoId), deleteFile);
+router.delete('/delete-by-url', deleteFileByUrl);
 router.get(
   '/:id/download',
   validateParams(commonSchemas.mongoId),

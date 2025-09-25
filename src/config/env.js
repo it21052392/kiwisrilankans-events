@@ -34,8 +34,8 @@ const envSchema = z.object({
   // AWS S3
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  AWS_REGION: z.string().default('ap-southeast-2'),
-  S3_BUCKET_NAME: z.string().optional(),
+  AWS_REGION: z.string().default('us-east-2'),
+  AWS_S3_BUCKET_NAME: z.string().optional(),
 
   // Push Notifications
   VAPID_PUBLIC_KEY: z.string().optional(),

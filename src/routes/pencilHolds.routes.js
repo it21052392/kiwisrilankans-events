@@ -52,6 +52,13 @@ router.get(
 // Admin routes for viewing all pencil holds
 router.get('/', validateQuery(commonSchemas.pagination), getPencilHolds);
 
+// Organizer confirmation route (moved up before admin-only routes)
+router.patch(
+  '/:id/confirm',
+  validateParams(commonSchemas.mongoId),
+  confirmPencilHold
+);
+
 // Admin only routes
 router.use(requireAdmin);
 
@@ -63,13 +70,6 @@ router.get(
 
 // Move specific routes after general routes
 router.get('/:id', validateParams(commonSchemas.mongoId), getPencilHoldById);
-
-// Organizer confirmation route (moved up)
-router.patch(
-  '/:id/confirm',
-  validateParams(commonSchemas.mongoId),
-  confirmPencilHold
-);
 router.post('/expired', handleExpiredPencilHolds);
 router.patch(
   '/:id/approve',

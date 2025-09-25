@@ -106,7 +106,6 @@ export default function AdminCategoriesPage() {
       });
       refetch();
     } catch (error) {
-      console.error('Error creating category:', error);
       toast.error('Failed to create category. Please try again.');
     }
   };
@@ -131,7 +130,6 @@ export default function AdminCategoriesPage() {
       });
       refetch();
     } catch (error) {
-      console.error('Error updating category:', error);
       toast.error('Failed to update category. Please try again.');
     }
   };
@@ -143,7 +141,6 @@ export default function AdminCategoriesPage() {
       toast.success('Category deleted successfully');
       refetch();
     } catch (error) {
-      console.error('Error deleting category:', error);
       toast.error('Failed to delete category. Please try again.');
     } finally {
       setIsDeleting(null);
@@ -156,7 +153,6 @@ export default function AdminCategoriesPage() {
       toast.success('Category status updated successfully');
       refetch();
     } catch (error) {
-      console.error('Error toggling category status:', error);
       toast.error('Failed to update category status. Please try again.');
     }
   };

@@ -69,7 +69,6 @@ export const useAuthStore = create<AuthState>()(
           await authService.logout();
         } catch (error) {
           // Log the error but don't throw it - we still want to clear local state
-          console.warn('Logout API call failed, but clearing local state:', error);
         } finally {
           // Always clear local state regardless of API call success
           set({
@@ -101,7 +100,6 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error: any) {
-          console.error('Auth check failed:', error);
           
           // If it's a 401 error, try to refresh the token
           if (error.status === 401) {
@@ -109,7 +107,6 @@ export const useAuthStore = create<AuthState>()(
               await get().refreshToken();
               return; // refreshToken will update the state
             } catch (refreshError) {
-              console.error('Token refresh failed during auth check:', refreshError);
             }
           }
           
@@ -135,7 +132,6 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error: any) {
-          console.error('Token refresh failed:', error);
           set({
             user: null,
             accessToken: null,

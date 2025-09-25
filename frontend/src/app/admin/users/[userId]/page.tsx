@@ -118,7 +118,6 @@ export default function UserDetailPage() {
       setIsEditing(false);
       toast.success('User updated successfully');
     } catch (error) {
-      console.error('Error updating user:', error);
       toast.error('Failed to update user');
     }
   };
@@ -134,7 +133,6 @@ export default function UserDetailPage() {
       toast.success('User deleted successfully');
       router.push('/admin/users');
     } catch (error) {
-      console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
     } finally {
       setIsDeleting(false);

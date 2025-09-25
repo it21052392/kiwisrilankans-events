@@ -4,8 +4,11 @@ export const APP_CONSTANTS = {
   VERSION: '1.0.0',
   DESCRIPTION: 'Event management platform for the Kiwi Sri Lankan community',
   AUTHOR: 'Kiwi Sri Lankans Team',
-  CONTACT_EMAIL: 'admin@kiwisrilankans.com',
-  SUPPORT_EMAIL: 'support@kiwisrilankans.com',
+  CONTACT_EMAIL: 'admin@kiwisrilankans.org',
+  SUPPORT_EMAIL: 'admin@kiwisrilankans.org',
+  PHONE: '+64 20 470 4707',
+  ADDRESS: '1/24, Headcorn Place, Botany Downs, Auckland 2010, New Zealand',
+  ORGANIZATION: 'Kiwi Sri Lankans',
 };
 
 // User roles

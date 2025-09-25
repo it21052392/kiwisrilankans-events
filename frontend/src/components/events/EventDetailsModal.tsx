@@ -115,7 +115,7 @@ export function EventDetailsModal({
                 }))}
                 showPrimaryBadge={true}
                 allowFullscreen={true}
-                aspectRatio="video"
+                aspectRatio="portrait"
               />
             </div>
           )}

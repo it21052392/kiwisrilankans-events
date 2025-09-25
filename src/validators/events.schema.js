@@ -68,7 +68,6 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -76,15 +75,19 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       images: z
         .array(
           z.object({
             url: z.string().refine(val => {
-              // Allow blob URLs or valid HTTP/HTTPS URLs
-              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
-            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
+              // Allow blob URLs, S3 URLs, or valid HTTP/HTTPS URLs
+              return (
+                val.startsWith('blob:') ||
+                val.includes('.s3.') ||
+                val.includes('amazonaws.com') ||
+                /^https?:\/\/.+/.test(val)
+              );
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL, S3 URL, or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')
@@ -92,7 +95,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(5, 'Maximum 5 images allowed per event')
         .optional(),
       tags: z
         .array(
@@ -102,7 +105,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 tags allowed')
         .optional(),
       requirements: z
         .array(
@@ -112,7 +115,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 requirements allowed')
         .optional(),
       contactInfo: z
         .object({
@@ -205,7 +208,6 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -213,16 +215,20 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       featured: z.boolean().optional(),
       images: z
         .array(
           z.object({
             url: z.string().refine(val => {
-              // Allow blob URLs or valid HTTP/HTTPS URLs
-              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
-            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
+              // Allow blob URLs, S3 URLs, or valid HTTP/HTTPS URLs
+              return (
+                val.startsWith('blob:') ||
+                val.includes('.s3.') ||
+                val.includes('amazonaws.com') ||
+                /^https?:\/\/.+/.test(val)
+              );
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL, S3 URL, or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')
@@ -230,7 +236,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(5, 'Maximum 5 images allowed per event')
         .optional(),
       tags: z
         .array(
@@ -240,7 +246,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 tags allowed')
         .optional(),
       requirements: z
         .array(
@@ -250,7 +256,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 requirements allowed')
         .optional(),
       contactInfo: z
         .object({
@@ -398,7 +404,6 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'Start time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       endTime: z
         .string()
@@ -406,7 +411,6 @@ export const eventSchemas = {
           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
           'End time must be in HH:MM format'
         )
-        .max(1, 'Only 1 image allowed per event')
         .optional(),
       currency: z.enum(['NZD', 'USD', 'AUD', 'EUR', 'GBP']).optional(),
       // Organizers cannot change status, featured, or approval fields
@@ -414,9 +418,14 @@ export const eventSchemas = {
         .array(
           z.object({
             url: z.string().refine(val => {
-              // Allow blob URLs or valid HTTP/HTTPS URLs
-              return val.startsWith('blob:') || /^https?:\/\/.+/.test(val);
-            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL or blob URL'),
+              // Allow blob URLs, S3 URLs, or valid HTTP/HTTPS URLs
+              return (
+                val.startsWith('blob:') ||
+                val.includes('.s3.') ||
+                val.includes('amazonaws.com') ||
+                /^https?:\/\/.+/.test(val)
+              );
+            }, 'Invalid image URL - must be a valid HTTP/HTTPS URL, S3 URL, or blob URL'),
             alt: z
               .string()
               .max(100, 'Alt text cannot exceed 100 characters')
@@ -424,7 +433,7 @@ export const eventSchemas = {
             isPrimary: z.boolean().default(false),
           })
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(5, 'Maximum 5 images allowed per event')
         .optional(),
       tags: z
         .array(
@@ -434,7 +443,7 @@ export const eventSchemas = {
             .max(30, 'Tag cannot exceed 30 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 tags allowed')
         .optional(),
       requirements: z
         .array(
@@ -444,7 +453,7 @@ export const eventSchemas = {
             .max(100, 'Requirement cannot exceed 100 characters')
             .trim()
         )
-        .max(1, 'Only 1 image allowed per event')
+        .max(10, 'Maximum 10 requirements allowed')
         .optional(),
       contactInfo: z
         .object({

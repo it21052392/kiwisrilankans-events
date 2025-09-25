@@ -80,7 +80,6 @@ export default function AdminWhitelistPage() {
       setNewEmail('');
       refetch();
     } catch (error) {
-      console.error('Error adding email to whitelist:', error);
       toast.error('Failed to add email to whitelist. Please try again.');
     }
   };
@@ -96,7 +95,6 @@ export default function AdminWhitelistPage() {
       toast.success('Email removed from whitelist successfully');
       refetch();
     } catch (error) {
-      console.error('Error removing email from whitelist:', error);
       toast.error('Failed to remove email from whitelist. Please try again.');
     } finally {
       setIsDeleting(null);

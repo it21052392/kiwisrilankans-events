@@ -17,6 +17,7 @@ import {
   Shield
 } from 'lucide-react';
 import Link from 'next/link';
+import { CONTACT_INFO } from '@/lib/contact-info';
 
 export default function AboutPage() {
   const features = [
@@ -255,21 +256,21 @@ export default function AboutPage() {
               <MapPin className="h-6 w-6 text-primary" />
               <div className="text-left">
                 <div className="font-semibold">Location</div>
-                <div className="text-sm text-muted-foreground">Auckland, New Zealand</div>
+                <div className="text-sm text-muted-foreground">{CONTACT_INFO.CONTACT.ADDRESS.FULL}</div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Clock className="h-6 w-6 text-primary" />
               <div className="text-left">
                 <div className="font-semibold">Hours</div>
-                <div className="text-sm text-muted-foreground">24/7 Online Platform</div>
+                <div className="text-sm text-muted-foreground">{CONTACT_INFO.HOURS.DESCRIPTION}</div>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Users className="h-6 w-6 text-primary" />
               <div className="text-left">
                 <div className="font-semibold">Community</div>
-                <div className="text-sm text-muted-foreground">2,500+ Members</div>
+                <div className="text-sm text-muted-foreground">{CONTACT_INFO.COMMUNITY.MEMBER_COUNT}</div>
               </div>
             </div>
           </div>

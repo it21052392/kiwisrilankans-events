@@ -54,21 +54,15 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  console.log('ImagePreview props:', {
-    imageId: image.id,
-    showActions,
-    isPrimary,
-    hasOnRemove: !!onRemove,
-    hasOnSetPrimary: !!onSetPrimary
-  });
+  // Get optimized image URL for better performance
+  const optimizedUrl = ImageUploadService.getOptimizedImageUrl(image.url, 400, 300);
+
 
   return (
     <div 
       className="relative group"
-      onMouseEnter={() => console.log('Mouse enter on image:', image.id)}
-      onMouseLeave={() => console.log('Mouse leave on image:', image.id)}
     >
-      <div className="aspect-video rounded-lg overflow-hidden border bg-gray-50">
+      <div className="aspect-[3/4] rounded-lg overflow-hidden border bg-gray-50">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -80,14 +74,15 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
           </div>
         ) : (
           <img
-            src={image.url}
+            src={optimizedUrl}
             alt={image.originalName}
             className={cn(
               "w-full h-full object-cover transition-opacity duration-200",
               isLoading ? "opacity-0" : "opacity-100"
             )}
             onLoad={() => setIsLoading(false)}
-            onError={() => {
+            onError={(e) => {
+              ImageUploadService.handleImageError(e);
               setIsLoading(false);
               setHasError(true);
             }}
@@ -104,7 +99,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       {showActions && (
         <div 
           className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2"
-          onMouseEnter={() => console.log('Mouse enter on actions overlay for image:', image.id)}
         >
           <Button
             size="sm"
@@ -112,7 +106,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('View button clicked for image:', image.id);
               window.open(image.url, '_blank');
             }}
             className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
@@ -127,7 +120,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Set primary button clicked for image:', image.id);
                 onSetPrimary();
               }}
               className="h-8 w-8 p-0 bg-white hover:bg-gray-100"
@@ -142,7 +134,6 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Delete button clicked for image:', image.id);
               onRemove();
             }}
             className="h-8 w-8 p-0 bg-red-500 hover:bg-red-600 text-white"
@@ -224,17 +215,23 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const handleRemoveImage = useCallback(async (imageId: string) => {
     try {
-      console.log('Attempting to delete image with ID:', imageId);
-      console.log('Current images:', images);
       
-      await ImageUploadService.deleteImage(imageId);
-      const newImages = images.filter(img => img.id !== imageId);
-      console.log('New images after deletion:', newImages);
+      // Check if this is an existing image (temporary ID) or a newly uploaded image
+      const isExistingImage = imageId.startsWith('existing-');
       
-      setImages(newImages);
-      toast.success('Image removed successfully');
+      if (isExistingImage) {
+        // For existing images, just remove from local state without calling API
+        const newImages = images.filter(img => img.id !== imageId);
+        setImages(newImages);
+        toast.success('Image removed successfully');
+      } else {
+        // For newly uploaded images, call the delete API
+        await ImageUploadService.deleteImage(imageId);
+        const newImages = images.filter(img => img.id !== imageId);
+        setImages(newImages);
+        toast.success('Image deleted successfully');
+      }
     } catch (error) {
-      console.error('Error deleting image:', error);
       toast.error('Failed to remove image');
     }
   }, [images]);

@@ -63,7 +63,6 @@ export default function ImageManagementPage() {
         setImages(response.data.files);
       }
     } catch (error) {
-      console.error('Error loading images:', error);
       toast.error('Failed to load images');
     } finally {
       setIsLoading(false);
@@ -95,7 +94,6 @@ export default function ImageManagementPage() {
       setImages(prev => [...prev, ...uploadResults]);
       toast.success(`${uploadResults.length} image(s) uploaded successfully`);
     } catch (error) {
-      console.error('Error uploading images:', error);
       toast.error('Failed to upload images');
     }
   };
@@ -111,7 +109,6 @@ export default function ImageManagementPage() {
       });
       toast.success('Image deleted successfully');
     } catch (error) {
-      console.error('Error deleting image:', error);
       toast.error('Failed to delete image');
     }
   };
@@ -130,7 +127,6 @@ export default function ImageManagementPage() {
       setSelectedImages(new Set());
       toast.success(`${selectedImages.size} image(s) deleted successfully`);
     } catch (error) {
-      console.error('Error deleting images:', error);
       toast.error('Failed to delete images');
     } finally {
       setIsDeleting(false);
@@ -322,7 +318,6 @@ export default function ImageManagementPage() {
             aspectRatio="square"
             onImageClick={(image, index) => {
               // Handle image click for management actions
-              console.log('Image clicked:', image, index);
             }}
           />
         ) : (

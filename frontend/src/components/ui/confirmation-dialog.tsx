@@ -161,7 +161,6 @@ export function ConfirmationDialog({
       await onConfirm()
       setDialogOpen?.(false)
     } catch (error) {
-      console.error("Confirmation action failed:", error)
     } finally {
       setIsConfirming(false)
     }

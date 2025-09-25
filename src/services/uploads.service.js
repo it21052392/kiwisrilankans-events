@@ -6,12 +6,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
-import { Types } from 'mongoose';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 import { logger } from '../config/logger.js';
 import { env } from '../config/env.js';
+import File from '../models/file.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,7 @@ class UploadService {
     } else {
       this.s3Client = null;
     }
-    this.bucketName = env.S3_BUCKET_NAME;
+    this.bucketName = env.AWS_S3_BUCKET_NAME;
   }
 
   async uploadSingle(file, type = 'general', userId) {
@@ -40,8 +41,10 @@ class UploadService {
         throw new Error('Invalid file object received');
       }
 
+      // Convert userId to string if it's an ObjectId
+      const userIdStr = userId?.toString() || 'unknown';
       const fileExtension = file.originalname.split('.').pop();
-      const fileName = `${type}/${userId}/${uuidv4()}.${fileExtension}`;
+      const fileName = `${type}/${userIdStr}/${uuidv4()}.${fileExtension}`;
 
       // Add image-specific metadata for event images
       const metadata = {
@@ -57,8 +60,15 @@ class UploadService {
           const dimensions = await this.getImageDimensions(file.buffer);
           metadata.width = String(dimensions.width || 0);
           metadata.height = String(dimensions.height || 0);
+          logger.info(
+            `Image dimensions extracted: ${dimensions.width}x${dimensions.height}`
+          );
         } catch (error) {
-          logger.warn('Could not extract image dimensions:', error);
+          logger.warn('Could not extract image dimensions:', error.message);
+          // Don't fail the upload if we can't read dimensions
+          // Just log the warning and continue
+          metadata.width = '0';
+          metadata.height = '0';
         }
       }
 
@@ -66,13 +76,19 @@ class UploadService {
       if (
         !env.AWS_ACCESS_KEY_ID ||
         !env.AWS_SECRET_ACCESS_KEY ||
-        !env.S3_BUCKET_NAME ||
+        !env.AWS_S3_BUCKET_NAME ||
         !this.s3Client
       ) {
         logger.warn(
           'AWS S3 credentials not configured. Using local file storage for development.'
         );
-        return await this.uploadToLocal(file, fileName, metadata, type, userId);
+        return await this.uploadToLocal(
+          file,
+          fileName,
+          metadata,
+          type,
+          userIdStr
+        );
       }
 
       const uploadParams = {
@@ -97,8 +113,8 @@ class UploadService {
 
       const fileUrl = `https://${this.bucketName}.s3.${env.AWS_REGION}.amazonaws.com/${fileName}`;
 
-      return {
-        id: new Types.ObjectId().toString(),
+      // Save file metadata to database
+      const fileRecord = new File({
         filename: fileName,
         originalName: file.originalname,
         url: fileUrl,
@@ -106,14 +122,31 @@ class UploadService {
         type: file.mimetype,
         uploadType: type,
         uploadedBy: userId,
-        uploadedAt: new Date(),
+        s3Key: fileName,
+        s3Bucket: this.bucketName,
         dimensions:
           metadata.width && metadata.height
             ? {
                 width: parseInt(metadata.width),
                 height: parseInt(metadata.height),
               }
-            : undefined,
+            : { width: 0, height: 0 },
+        metadata: metadata,
+      });
+
+      await fileRecord.save();
+
+      return {
+        id: fileRecord._id.toString(),
+        filename: fileName,
+        originalName: file.originalname,
+        url: fileUrl,
+        size: file.size,
+        type: file.mimetype,
+        uploadType: type,
+        uploadedBy: userId,
+        uploadedAt: fileRecord.createdAt,
+        dimensions: fileRecord.dimensions,
       };
     } catch (error) {
       logger.error('Upload error:', error);
@@ -121,7 +154,7 @@ class UploadService {
     }
   }
 
-  async uploadToLocal(file, fileName, metadata, type, userId) {
+  async uploadToLocal(file, fileName, metadata, type, userIdStr) {
     try {
       // Create uploads directory if it doesn't exist
       const uploadsDir = path.join(__dirname, '../../uploads', type);
@@ -130,7 +163,7 @@ class UploadService {
       }
 
       // Create user directory
-      const userDir = path.join(uploadsDir, userId);
+      const userDir = path.join(uploadsDir, userIdStr);
       if (!fs.existsSync(userDir)) {
         fs.mkdirSync(userDir, { recursive: true });
       }
@@ -139,29 +172,52 @@ class UploadService {
       const filePath = path.join(userDir, path.basename(fileName));
       fs.writeFileSync(filePath, file.buffer);
 
-      // Generate local URL - use the correct port for the backend
-      const fileUrl = `http://localhost:${env.PORT || 3000}/uploads/${type}/${userId}/${path.basename(fileName)}`;
+      // Generate local URL - use the correct host and port
+      const baseUrl =
+        process.env.NODE_ENV === 'production'
+          ? env.CORS_ORIGIN
+            ? env.CORS_ORIGIN.split(',')[0].replace(':5000', ':3000')
+            : `http://localhost:${env.PORT || 3000}`
+          : `http://localhost:${env.PORT || 3000}`;
+      const fileUrl = `${baseUrl}/uploads/${type}/${userIdStr}/${path.basename(fileName)}`;
 
       logger.info(`File uploaded locally: ${filePath}`);
       logger.info(`File URL: ${fileUrl}`);
 
-      return {
-        id: new Types.ObjectId().toString(),
+      // Save file metadata to database even for local uploads
+      const fileRecord = new File({
         filename: fileName,
         originalName: file.originalname,
         url: fileUrl,
         size: file.size,
         type: file.mimetype,
         uploadType: type,
-        uploadedBy: userId,
-        uploadedAt: new Date(),
+        uploadedBy: userIdStr,
+        s3Key: fileName, // For local files, use filename as key
+        s3Bucket: 'local', // Mark as local storage
         dimensions:
           metadata.width && metadata.height
             ? {
                 width: parseInt(metadata.width),
                 height: parseInt(metadata.height),
               }
-            : undefined,
+            : { width: 0, height: 0 },
+        metadata: metadata,
+      });
+
+      await fileRecord.save();
+
+      return {
+        id: fileRecord._id.toString(),
+        filename: fileName,
+        originalName: file.originalname,
+        url: fileUrl,
+        size: file.size,
+        type: file.mimetype,
+        uploadType: type,
+        uploadedBy: userIdStr,
+        uploadedAt: fileRecord.createdAt,
+        dimensions: fileRecord.dimensions,
       };
     } catch (error) {
       logger.error('Local upload error:', error);
@@ -170,76 +226,132 @@ class UploadService {
   }
 
   async uploadMultiple(files, type = 'general', userId) {
+    // Convert userId to string if it's an ObjectId
+    const userIdStr = userId?.toString() || 'unknown';
     const uploadPromises = files.map(file =>
-      this.uploadSingle(file, type, userId)
+      this.uploadSingle(file, type, userIdStr)
     );
     return await Promise.all(uploadPromises);
   }
 
   async getFileById(id, userId) {
-    // In a real implementation, you would store file metadata in a database
-    // For now, we'll return a mock response
-    return {
-      id,
-      filename: 'example-file.jpg',
-      originalName: 'example-file.jpg',
-      url: 'https://example.com/file.jpg',
-      size: 1024000,
-      type: 'image/jpeg',
-      uploadType: 'general',
-      uploadedBy: userId,
-      uploadedAt: new Date(),
-    };
+    try {
+      const file = await File.findOne({
+        _id: id,
+        uploadedBy: userId,
+        isActive: true,
+      });
+
+      if (!file) {
+        throw new Error('File not found');
+      }
+
+      return {
+        id: file._id.toString(),
+        filename: file.filename,
+        originalName: file.originalName,
+        url: file.url,
+        size: file.size,
+        type: file.type,
+        uploadType: file.uploadType,
+        uploadedBy: file.uploadedBy,
+        uploadedAt: file.createdAt,
+        dimensions: file.dimensions,
+      };
+    } catch (error) {
+      logger.error('Get file by ID error:', error);
+      throw new Error('Failed to get file');
+    }
   }
 
-  async getUserFiles(userId, { page = 1, limit = 10, _type }) {
-    // In a real implementation, you would query a files database
-    // For now, we'll return a mock response
-    return {
-      files: [],
-      pagination: {
-        page,
-        limit,
-        total: 0,
-        pages: 0,
-      },
-    };
+  async getUserFiles(userId, { page = 1, limit = 10, type }) {
+    try {
+      const query = {
+        uploadedBy: userId,
+        isActive: true,
+      };
+
+      if (type) {
+        query.uploadType = type;
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [files, total] = await Promise.all([
+        File.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        File.countDocuments(query),
+      ]);
+
+      const formattedFiles = files.map(file => ({
+        id: file._id.toString(),
+        filename: file.filename,
+        originalName: file.originalName,
+        url: file.url,
+        size: file.size,
+        type: file.type,
+        uploadType: file.uploadType,
+        uploadedBy: file.uploadedBy,
+        uploadedAt: file.createdAt,
+        dimensions: file.dimensions,
+      }));
+
+      return {
+        files: formattedFiles,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      logger.error('Get user files error:', error);
+      throw new Error('Failed to get user files');
+    }
   }
 
   async deleteFile(id, userId) {
     try {
-      // For now, we'll implement local file deletion
-      // In a production environment, you would:
-      // 1. Get file metadata from database using the id
-      // 2. Delete from S3 using the filename
-      // 3. Remove from database
-      // 4. Delete local file if it exists
+      // Get file metadata from database
+      const file = await File.findOne({
+        _id: id,
+        uploadedBy: userId,
+        isActive: true,
+      });
 
-      // Check if AWS credentials are configured
-      if (
-        !env.AWS_ACCESS_KEY_ID ||
-        !env.AWS_SECRET_ACCESS_KEY ||
-        !env.S3_BUCKET_NAME ||
-        !this.s3Client
-      ) {
-        // For local development, we'll try to find and delete the file
-        // This is a simplified approach - in production you'd store file metadata in a database
-        logger.info(`File deletion requested for ID: ${id} by user ${userId}`);
-
-        // Since we don't have a database yet, we'll just return success
-        // In a real implementation, you'd look up the file by ID and delete it
-        return {
-          success: true,
-          message: 'File deletion requested (local development mode)',
-        };
+      if (!file) {
+        throw new Error('File not found');
       }
 
-      // For S3, you would delete the file here
-      // const command = new DeleteObjectCommand({
-      //   Bucket: this.bucketName,
-      //   Key: filename
-      // });
-      // await this.s3Client.send(command);
+      // Delete from S3 if it's not a local file
+      if (file.s3Bucket !== 'local' && this.s3Client) {
+        try {
+          const command = new DeleteObjectCommand({
+            Bucket: file.s3Bucket,
+            Key: file.s3Key,
+          });
+          await this.s3Client.send(command);
+          logger.info(`File deleted from S3: ${file.s3Key}`);
+        } catch (s3Error) {
+          logger.warn(`Failed to delete file from S3: ${file.s3Key}`, s3Error);
+          // Continue with database deletion even if S3 deletion fails
+        }
+      } else if (file.s3Bucket === 'local') {
+        // Delete local file
+        try {
+          const filePath = path.join(__dirname, '../../uploads', file.s3Key);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            logger.info(`Local file deleted: ${filePath}`);
+          }
+        } catch (localError) {
+          logger.warn(`Failed to delete local file: ${file.s3Key}`, localError);
+          // Continue with database deletion even if local file deletion fails
+        }
+      }
+
+      // Soft delete from database
+      await File.softDelete(id, userId);
 
       logger.info(`File deleted: ${id} by user ${userId}`);
       return { success: true };
@@ -251,62 +363,52 @@ class UploadService {
 
   async deleteFileByUrl(url, userId) {
     try {
-      // Check if AWS credentials are configured
-      if (
-        !env.AWS_ACCESS_KEY_ID ||
-        !env.AWS_SECRET_ACCESS_KEY ||
-        !env.S3_BUCKET_NAME ||
-        !this.s3Client
-      ) {
-        logger.info(
-          `File deletion requested for URL: ${url} by user ${userId} (local development mode)`
-        );
-        return {
-          success: true,
-          message: 'File deletion requested (local development mode)',
-        };
-      }
-
-      // Extract the S3 key from the URL
-      // URL format: https://bucket-name.s3.region.amazonaws.com/key
-      // or https://s3.region.amazonaws.com/bucket-name/key
-      let key;
-      try {
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/').filter(part => part);
-
-        if (
-          urlObj.hostname.includes('s3.') &&
-          urlObj.hostname.includes('.amazonaws.com')
-        ) {
-          // Format: https://s3.region.amazonaws.com/bucket-name/key
-          key = pathParts.slice(1).join('/');
-        } else if (
-          urlObj.hostname.includes('.s3.') &&
-          urlObj.hostname.includes('.amazonaws.com')
-        ) {
-          // Format: https://bucket-name.s3.region.amazonaws.com/key
-          key = pathParts.join('/');
-        } else {
-          throw new Error('Invalid S3 URL format');
-        }
-      } catch (error) {
-        logger.warn(`Could not parse S3 URL: ${url}`, error);
-        return {
-          success: false,
-          message: 'Invalid S3 URL format',
-        };
-      }
-
-      // Delete from S3
-      const command = new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
+      // Find file by URL in database
+      const file = await File.findOne({
+        url: url,
+        uploadedBy: userId,
+        isActive: true,
       });
 
-      await this.s3Client.send(command);
+      if (!file) {
+        logger.warn(`File not found in database for URL: ${url}`);
+        return {
+          success: false,
+          message: 'File not found in database',
+        };
+      }
 
-      logger.info(`File deleted from S3: ${key} by user ${userId}`);
+      // Delete from S3 if it's not a local file
+      if (file.s3Bucket !== 'local' && this.s3Client) {
+        try {
+          const command = new DeleteObjectCommand({
+            Bucket: file.s3Bucket,
+            Key: file.s3Key,
+          });
+          await this.s3Client.send(command);
+          logger.info(`File deleted from S3: ${file.s3Key}`);
+        } catch (s3Error) {
+          logger.warn(`Failed to delete file from S3: ${file.s3Key}`, s3Error);
+          // Continue with database deletion even if S3 deletion fails
+        }
+      } else if (file.s3Bucket === 'local') {
+        // Delete local file
+        try {
+          const filePath = path.join(__dirname, '../../uploads', file.s3Key);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            logger.info(`Local file deleted: ${filePath}`);
+          }
+        } catch (localError) {
+          logger.warn(`Failed to delete local file: ${file.s3Key}`, localError);
+          // Continue with database deletion even if local file deletion fails
+        }
+      }
+
+      // Soft delete from database
+      await File.softDelete(file._id, userId);
+
+      logger.info(`File deleted by URL: ${url} by user ${userId}`);
       return { success: true };
     } catch (error) {
       logger.error('Delete file by URL error:', error);
@@ -371,32 +473,117 @@ class UploadService {
   async getAllFiles({
     page = 1,
     limit = 10,
-    _type,
-    _userId,
-    _startDate,
-    _endDate,
+    type,
+    userId,
+    startDate,
+    endDate,
   }) {
-    // In a real implementation, you would query a files database
-    return {
-      files: [],
-      pagination: {
-        page,
-        limit,
-        total: 0,
-        pages: 0,
-      },
-    };
+    try {
+      const query = { isActive: true };
+
+      if (type) {
+        query.uploadType = type;
+      }
+
+      if (userId) {
+        query.uploadedBy = userId;
+      }
+
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+          query.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate) {
+          query.createdAt.$lte = new Date(endDate);
+        }
+      }
+
+      const skip = (page - 1) * limit;
+
+      const [files, total] = await Promise.all([
+        File.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .populate('uploadedBy', 'name email')
+          .lean(),
+        File.countDocuments(query),
+      ]);
+
+      const formattedFiles = files.map(file => ({
+        id: file._id.toString(),
+        filename: file.filename,
+        originalName: file.originalName,
+        url: file.url,
+        size: file.size,
+        type: file.type,
+        uploadType: file.uploadType,
+        uploadedBy: file.uploadedBy,
+        uploadedAt: file.createdAt,
+        dimensions: file.dimensions,
+      }));
+
+      return {
+        files: formattedFiles,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      logger.error('Get all files error:', error);
+      throw new Error('Failed to get all files');
+    }
   }
 
   async cleanupOrphanedFiles() {
     try {
-      // In a real implementation, you would:
-      // 1. Find files in S3 that don't exist in database
-      // 2. Delete orphaned files
-      // 3. Return cleanup statistics
+      // Find files that are marked as inactive (soft deleted) but still exist in S3
+      const orphanedFiles = await File.find({
+        isActive: false,
+        s3Bucket: { $ne: 'local' },
+      });
 
-      logger.info('Orphaned files cleanup completed');
-      return { deletedCount: 0 };
+      let deletedCount = 0;
+      const results = [];
+
+      for (const file of orphanedFiles) {
+        try {
+          if (this.s3Client) {
+            const command = new DeleteObjectCommand({
+              Bucket: file.s3Bucket,
+              Key: file.s3Key,
+            });
+            await this.s3Client.send(command);
+            deletedCount++;
+            results.push({
+              fileId: file._id.toString(),
+              s3Key: file.s3Key,
+              success: true,
+            });
+          }
+        } catch (error) {
+          logger.warn(`Failed to delete orphaned file: ${file.s3Key}`, error);
+          results.push({
+            fileId: file._id.toString(),
+            s3Key: file.s3Key,
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+
+      logger.info(
+        `Orphaned files cleanup completed: ${deletedCount} files deleted`
+      );
+      return {
+        deletedCount,
+        results,
+        totalProcessed: orphanedFiles.length,
+      };
     } catch (error) {
       logger.error('Cleanup error:', error);
       throw new Error('Failed to cleanup orphaned files');
@@ -481,13 +668,26 @@ class UploadService {
     }
   }
 
-  async getImageDimensions(_buffer) {
-    return new Promise((resolve, _reject) => {
-      // This is a simplified implementation
-      // In a real application, you'd use a library like 'sharp' or 'jimp'
-      // For now, we'll return default dimensions
-      resolve({ width: 1920, height: 1080 });
-    });
+  async getImageDimensions(buffer) {
+    try {
+      if (!buffer || buffer.length === 0) {
+        throw new Error('Empty buffer provided');
+      }
+
+      const metadata = await sharp(buffer).metadata();
+
+      if (!metadata.width || !metadata.height) {
+        throw new Error('Could not extract dimensions from image');
+      }
+
+      return {
+        width: metadata.width,
+        height: metadata.height,
+      };
+    } catch (error) {
+      logger.warn('Failed to get image dimensions:', error.message);
+      throw new Error(`Failed to read image dimensions: ${error.message}`);
+    }
   }
 }
 

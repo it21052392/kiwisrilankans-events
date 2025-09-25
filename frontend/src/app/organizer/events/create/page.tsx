@@ -33,6 +33,8 @@ import { eventsService, CreateEventData } from '@/services/events.service';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
 import toast from 'react-hot-toast';
+import { processValidationErrors, getErrorMessage } from '@/lib/validation-utils';
+import { CONTACT_INFO } from '@/lib/contact-info';
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -73,7 +75,7 @@ export default function CreateEventPage() {
     requirements: [],
     contactInfo: {
       name: user?.name || '',
-      email: user?.email || '',
+      email: user?.email || CONTACT_INFO.CONTACT.EMAIL,
       phone: ''
     }
   });
@@ -240,10 +242,10 @@ export default function CreateEventPage() {
     setUploadedImages(images);
     setFormData(prev => ({
       ...prev,
-      images: images.map(img => ({
+      images: images.map((img, index) => ({
         url: img.url,
         alt: img.originalName,
-        isPrimary: false // ImageUploadResult doesn't have isPrimary property
+        isPrimary: index === 0 // First image is primary
       }))
     }));
   };
@@ -256,11 +258,16 @@ export default function CreateEventPage() {
 
     setIsSubmitting(true);
     try {
-      // Format dates to include timezone information for backend validation
+      // Format dates and extract times for backend
+      const startDateTime = formData.startDate ? new Date(formData.startDate) : null;
+      const endDateTime = formData.endDate ? new Date(formData.endDate) : null;
+      
       const eventData = {
         ...formData,
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
+        startDate: startDateTime ? startDateTime.toISOString() : formData.startDate,
+        endDate: endDateTime ? endDateTime.toISOString() : formData.endDate,
+        startTime: startDateTime ? startDateTime.toTimeString().slice(0, 5) : undefined,
+        endTime: endDateTime ? endDateTime.toTimeString().slice(0, 5) : undefined,
       };
 
       const response = await createEventMutation.mutateAsync(eventData);
@@ -278,7 +285,6 @@ export default function CreateEventPage() {
             });
             toast.success('Event created and pencil hold created successfully!');
           } catch (pencilHoldError) {
-            console.error('Error creating pencil hold:', pencilHoldError);
             toast.error('Event created but failed to create pencil hold');
           }
         } else {
@@ -289,9 +295,25 @@ export default function CreateEventPage() {
       } else {
         throw new Error('Failed to create event');
       }
-    } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error('Failed to create event. Please try again.');
+    } catch (error: any) {
+      console.error('Event creation error:', error);
+      
+      // Handle validation errors from backend
+      const { frontendErrors, firstError, hasValidationErrors } = processValidationErrors(error);
+      
+      if (hasValidationErrors) {
+        // Update form errors with backend validation errors
+        setErrors(prev => ({ ...prev, ...frontendErrors }));
+        
+        // Show first error as toast
+        if (firstError) {
+          toast.error(`Validation Error: ${firstError}`);
+        }
+      } else {
+        // Generic error message
+        const errorMessage = getErrorMessage(error, 'Failed to create event. Please try again.');
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

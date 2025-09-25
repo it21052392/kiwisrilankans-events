@@ -79,7 +79,6 @@ export default function AdminAnalyticsPage() {
       ]);
       toast.success('Analytics data refreshed');
     } catch (error) {
-      console.error('Error refreshing data:', error);
       toast.error('Failed to refresh data');
     } finally {
       setIsRefreshing(false);

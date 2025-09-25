@@ -31,6 +31,7 @@ import { useEvent, useUpdateEventByOrganizer } from '@/hooks/queries/useEvents';
 import { EventImageUpload } from '@/components/events/EventImageUpload';
 import { ImageUploadResult } from '@/services/image-upload.service';
 import toast from 'react-hot-toast';
+import { processValidationErrors, getErrorMessage } from '@/lib/validation-utils';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -83,6 +84,8 @@ export default function EditEventPage() {
   const [newTag, setNewTag] = useState('');
   const [newRequirement, setNewRequirement] = useState('');
   const [uploadedImages, setUploadedImages] = useState<ImageUploadResult[]>([]);
+  const [originalImages, setOriginalImages] = useState<any[]>([]);
+  const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
@@ -95,19 +98,38 @@ export default function EditEventPage() {
     if (eventData?.data?.event) {
       const event = eventData.data.event;
       
-      // Helper function to format date for datetime-local input
-      const formatDateForInput = (dateField: string) => {
+      // Helper function to format date and time for datetime-local input
+      const formatDateTimeForInput = (dateField: string, timeField?: string) => {
         if (!dateField) return '';
-        const date = new Date(dateField);
-        return date.toISOString().slice(0, 16);
+        
+        let date = new Date(dateField);
+        
+        // If we have a separate time field, use it to set the time
+        if (timeField) {
+          const [hours, minutes] = timeField.split(':').map(Number);
+          if (!isNaN(hours) && !isNaN(minutes)) {
+            date.setHours(hours, minutes, 0, 0);
+          }
+        }
+        
+        // Format the date in local timezone for datetime-local input
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
       };
+      
+      // Debug: Log the original dates and formatted dates
       
       setFormData({
         title: event.title || '',
         description: event.description || '',
         category: event.category?._id || '',
-        startDate: formatDateForInput(event.startDate),
-        endDate: formatDateForInput(event.endDate),
+        startDate: formatDateTimeForInput(event.startDate),
+        endDate: formatDateTimeForInput(event.endDate),
         location: {
           name: event.location?.name || '',
           address: event.location?.address || '',
@@ -132,6 +154,9 @@ export default function EditEventPage() {
       
       // Initialize uploaded images from existing event data
       if (event.images && event.images.length > 0) {
+        // Store original images for tracking
+        setOriginalImages(event.images);
+        
         const existingImages: ImageUploadResult[] = event.images.map((img, index) => ({
           id: `existing-${index}`,
           filename: img.url.split('/').pop() || `image-${index}`,
@@ -299,12 +324,21 @@ export default function EditEventPage() {
 
   const handleImagesChange = (images: ImageUploadResult[]) => {
     setUploadedImages(images);
+    
+    // Track which original images were removed
+    const currentImageUrls = images.map(img => img.url);
+    const removedUrls = originalImages
+      .filter(originalImg => !currentImageUrls.includes(originalImg.url))
+      .map(originalImg => originalImg.url);
+    
+    setRemovedImageUrls(removedUrls);
+    
     setFormData(prev => ({
       ...prev,
-      images: images.map(img => ({
+      images: images.map((img, index) => ({
         url: img.url,
         alt: img.originalName,
-        isPrimary: false // ImageUploadResult doesn't have isPrimary property
+        isPrimary: index === 0 // First image is primary
       }))
     }));
   };
@@ -317,11 +351,44 @@ export default function EditEventPage() {
 
     setIsSubmitting(true);
     try {
-      // Format dates to include timezone information for backend validation
+      // Delete removed images from S3
+      if (removedImageUrls.length > 0) {
+        try {
+          // Import the ImageUploadService to delete images by URL
+          const { ImageUploadService } = await import('@/services/image-upload.service');
+          
+          // Delete each removed image
+          for (const imageUrl of removedImageUrls) {
+            try {
+              // Find the file in the database by URL and delete it
+              const response = await fetch('/api/uploads/delete-by-url', {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: imageUrl }),
+              });
+              
+              if (!response.ok) {
+              }
+            } catch (error) {
+            }
+          }
+        } catch (error) {
+          // Continue with event update even if image deletion fails
+        }
+      }
+
+      // Format dates and extract times for backend
+      const startDateTime = formData.startDate ? new Date(formData.startDate) : null;
+      const endDateTime = formData.endDate ? new Date(formData.endDate) : null;
+      
       const eventData = {
         ...formData,
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : formData.startDate,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : formData.endDate,
+        startDate: startDateTime ? startDateTime.toISOString() : formData.startDate,
+        endDate: endDateTime ? endDateTime.toISOString() : formData.endDate,
+        startTime: startDateTime ? startDateTime.toTimeString().slice(0, 5) : undefined,
+        endTime: endDateTime ? endDateTime.toTimeString().slice(0, 5) : undefined,
       };
 
       await updateEventMutation.mutateAsync({
@@ -331,9 +398,25 @@ export default function EditEventPage() {
       
       toast.success('Event updated successfully!');
       router.push('/organizer/events');
-    } catch (error) {
-      console.error('Error updating event:', error);
-      toast.error('Failed to update event. Please try again.');
+    } catch (error: any) {
+      console.error('Event update error:', error);
+      
+      // Handle validation errors from backend
+      const { frontendErrors, firstError, hasValidationErrors } = processValidationErrors(error);
+      
+      if (hasValidationErrors) {
+        // Update form errors with backend validation errors
+        setErrors(prev => ({ ...prev, ...frontendErrors }));
+        
+        // Show first error as toast
+        if (firstError) {
+          toast.error(`Validation Error: ${firstError}`);
+        }
+      } else {
+        // Generic error message
+        const errorMessage = getErrorMessage(error, 'Failed to update event. Please try again.');
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

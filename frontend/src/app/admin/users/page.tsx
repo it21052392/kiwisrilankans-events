@@ -68,7 +68,6 @@ export default function AdminUsersPage() {
       toast.success('User deleted successfully');
       refetch();
     } catch (error) {
-      console.error('Error deleting user:', error);
       toast.error('Failed to delete user. Please try again.');
     } finally {
       setIsDeleting(null);
@@ -81,7 +80,6 @@ export default function AdminUsersPage() {
       toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
       refetch();
     } catch (error) {
-      console.error('Error updating user status:', error);
       toast.error('Failed to update user status. Please try again.');
     }
   };
@@ -92,7 +90,6 @@ export default function AdminUsersPage() {
       toast.success('User role updated successfully');
       refetch();
     } catch (error) {
-      console.error('Error updating user role:', error);
       toast.error('Failed to update user role. Please try again.');
     }
   };

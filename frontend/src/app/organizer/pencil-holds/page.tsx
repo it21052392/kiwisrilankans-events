@@ -162,7 +162,6 @@ export default function OrganizerPencilHoldsPage() {
       });
       refetch();
     } catch (error) {
-      console.error('Error creating pencil hold:', error);
       toast.error('Failed to create pencil hold. Please try again.');
     }
   };
@@ -191,7 +190,6 @@ export default function OrganizerPencilHoldsPage() {
       });
       refetch();
     } catch (error) {
-      console.error('Error updating pencil hold:', error);
       toast.error('Failed to update pencil hold. Please try again.');
     }
   };
@@ -203,7 +201,6 @@ export default function OrganizerPencilHoldsPage() {
       toast.success('Pencil hold deleted successfully');
       refetch();
     } catch (error) {
-      console.error('Error deleting pencil hold:', error);
       toast.error('Failed to delete pencil hold. Please try again.');
     } finally {
       setIsDeleting(null);
@@ -216,7 +213,6 @@ export default function OrganizerPencilHoldsPage() {
       toast.success('Pencil hold confirmed successfully');
       refetch();
     } catch (error) {
-      console.error('Error confirming pencil hold:', error);
       toast.error('Failed to confirm pencil hold. Please try again.');
     }
   };

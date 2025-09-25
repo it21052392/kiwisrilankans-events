@@ -28,7 +28,6 @@ export default function AdminLoginPage() {
       window.location.href = googleAuthUrl;
       
     } catch (error) {
-      console.error('Google login error:', error);
       toast.error('Failed to initiate Google login. Please try again.');
     } finally {
       setIsGoogleLoading(false);

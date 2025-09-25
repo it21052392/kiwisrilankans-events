@@ -36,6 +36,7 @@ import { useCategories } from '@/hooks/queries/useCategories';
 import { useEvent, useUpdateEvent, useApproveEvent, useRejectEvent } from '@/hooks/queries/useEvents';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { processValidationErrors, getErrorMessage } from '@/lib/validation-utils';
 
 export default function AdminEditEventPage() {
   const router = useRouter();
@@ -91,6 +92,9 @@ export default function AdminEditEventPage() {
 
   const [newTag, setNewTag] = useState('');
   const [newRequirement, setNewRequirement] = useState('');
+  
+  // Form validation
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'admin') {
@@ -214,9 +218,25 @@ export default function AdminEditEventPage() {
       });
       toast.success('Event updated successfully');
       router.push('/admin/events');
-    } catch (error) {
-      console.error('Error updating event:', error);
-      toast.error('Failed to update event. Please try again.');
+    } catch (error: any) {
+      console.error('Event update error:', error);
+      
+      // Handle validation errors from backend
+      const { frontendErrors, firstError, hasValidationErrors } = processValidationErrors(error);
+      
+      if (hasValidationErrors) {
+        // Update form errors with backend validation errors
+        setErrors(prev => ({ ...prev, ...frontendErrors }));
+        
+        // Show first error as toast
+        if (firstError) {
+          toast.error(`Validation Error: ${firstError}`);
+        }
+      } else {
+        // Generic error message
+        const errorMessage = getErrorMessage(error, 'Failed to update event. Please try again.');
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -228,7 +248,6 @@ export default function AdminEditEventPage() {
       toast.success('Event approved successfully');
       router.push('/admin/events');
     } catch (error) {
-      console.error('Error approving event:', error);
       toast.error('Failed to approve event. Please try again.');
     }
   };
@@ -239,7 +258,6 @@ export default function AdminEditEventPage() {
       toast.success('Event rejected successfully');
       router.push('/admin/events');
     } catch (error) {
-      console.error('Error rejecting event:', error);
       toast.error('Failed to reject event. Please try again.');
     }
   };
@@ -404,8 +422,10 @@ export default function AdminEditEventPage() {
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     placeholder="Enter event title"
+                    className={errors.title ? 'border-red-500' : ''}
                     required
                   />
+                  {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
@@ -413,7 +433,7 @@ export default function AdminEditEventPage() {
                     value={formData.category}
                     onValueChange={(value) => handleInputChange('category', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -424,6 +444,7 @@ export default function AdminEditEventPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.category && <p className="text-sm text-red-500 mt-1">{errors.category}</p>}
                 </div>
               </div>
               
@@ -434,9 +455,11 @@ export default function AdminEditEventPage() {
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe your event"
+                  className={errors.description ? 'border-red-500' : ''}
                   rows={4}
                   required
                 />
+                {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
               </div>
             </CardContent>
           </Card>
