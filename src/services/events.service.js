@@ -294,10 +294,10 @@ class EventService {
     }
 
     try {
-      // Delete associated images from S3
+      // Delete associated images from S3 (hard delete)
       if (event.images && event.images.length > 0) {
         const imageUrls = event.images.map(img => img.url);
-        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+        const deleteResult = await uploadService.hardDeleteMultipleFilesByUrls(
           imageUrls,
           event.createdBy
         );
@@ -306,6 +306,10 @@ class EventService {
           logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
+          );
+        } else {
+          logger.info(
+            `Successfully deleted ${deleteResult.summary.successful} images for event ${id}`
           );
         }
       }
@@ -339,10 +343,10 @@ class EventService {
     }
 
     try {
-      // Delete associated images from S3
+      // Delete associated images from S3 (hard delete)
       if (event.images && event.images.length > 0) {
         const imageUrls = event.images.map(img => img.url);
-        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+        const deleteResult = await uploadService.hardDeleteMultipleFilesByUrls(
           imageUrls,
           deletedBy
         );
@@ -351,6 +355,10 @@ class EventService {
           logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
+          );
+        } else {
+          logger.info(
+            `Successfully deleted ${deleteResult.summary.successful} images for event ${id}`
           );
         }
       }
@@ -419,10 +427,10 @@ class EventService {
     }
 
     try {
-      // Delete associated images from S3
+      // Delete associated images from S3 (hard delete)
       if (event.images && event.images.length > 0) {
         const imageUrls = event.images.map(img => img.url);
-        const deleteResult = await uploadService.deleteMultipleFilesByUrls(
+        const deleteResult = await uploadService.hardDeleteMultipleFilesByUrls(
           imageUrls,
           userId
         );
@@ -431,6 +439,10 @@ class EventService {
           logger.warn(
             `Some images could not be deleted for event ${id}:`,
             deleteResult.results
+          );
+        } else {
+          logger.info(
+            `Successfully deleted ${deleteResult.summary.successful} images for event ${id}`
           );
         }
       }

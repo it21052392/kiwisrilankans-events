@@ -416,6 +416,61 @@ class UploadService {
     }
   }
 
+  async hardDeleteFileByUrl(url, userId) {
+    try {
+      // Find file by URL in database
+      const file = await File.findOne({
+        url: url,
+        uploadedBy: userId,
+        isActive: true,
+      });
+
+      if (!file) {
+        logger.warn(`File not found in database for URL: ${url}`);
+        return {
+          success: false,
+          message: 'File not found in database',
+        };
+      }
+
+      // Delete from S3 if it's not a local file
+      if (file.s3Bucket !== 'local' && this.s3Client) {
+        try {
+          const command = new DeleteObjectCommand({
+            Bucket: file.s3Bucket,
+            Key: file.s3Key,
+          });
+          await this.s3Client.send(command);
+          logger.info(`File hard deleted from S3: ${file.s3Key}`);
+        } catch (s3Error) {
+          logger.warn(`Failed to delete file from S3: ${file.s3Key}`, s3Error);
+          // Continue with database deletion even if S3 deletion fails
+        }
+      } else if (file.s3Bucket === 'local') {
+        // Delete local file
+        try {
+          const filePath = path.join(__dirname, '../../uploads', file.s3Key);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            logger.info(`Local file hard deleted: ${filePath}`);
+          }
+        } catch (localError) {
+          logger.warn(`Failed to delete local file: ${file.s3Key}`, localError);
+          // Continue with database deletion even if local file deletion fails
+        }
+      }
+
+      // Hard delete from database (permanently remove)
+      await File.hardDelete(file._id, userId);
+
+      logger.info(`File hard deleted by URL: ${url} by user ${userId}`);
+      return { success: true };
+    } catch (error) {
+      logger.error('Hard delete file by URL error:', error);
+      throw new Error('Failed to hard delete file from S3');
+    }
+  }
+
   async deleteMultipleFilesByUrls(urls, userId) {
     try {
       const results = [];
@@ -453,6 +508,46 @@ class UploadService {
     } catch (error) {
       logger.error('Bulk delete files error:', error);
       throw new Error('Failed to delete multiple files');
+    }
+  }
+
+  async hardDeleteMultipleFilesByUrls(urls, userId) {
+    try {
+      const results = [];
+
+      for (const url of urls) {
+        try {
+          const result = await this.hardDeleteFileByUrl(url, userId);
+          results.push({
+            url,
+            success: result.success,
+            message: result.message,
+          });
+        } catch (error) {
+          logger.error(`Failed to hard delete file: ${url}`, error);
+          results.push({ url, success: false, message: error.message });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+
+      logger.info(
+        `Bulk hard delete completed: ${successCount} successful, ${failureCount} failed`
+      );
+
+      return {
+        success: failureCount === 0,
+        results,
+        summary: {
+          total: urls.length,
+          successful: successCount,
+          failed: failureCount,
+        },
+      };
+    } catch (error) {
+      logger.error('Bulk hard delete files error:', error);
+      throw new Error('Failed to hard delete multiple files');
     }
   }
 

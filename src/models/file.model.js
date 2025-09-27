@@ -123,6 +123,14 @@ fileSchema.statics.softDelete = function (fileId, userId) {
   );
 };
 
+// Static method to hard delete file (permanently remove from database)
+fileSchema.statics.hardDelete = function (fileId, userId) {
+  return this.findOneAndDelete({
+    _id: fileId,
+    uploadedBy: userId,
+  });
+};
+
 // Static method to cleanup orphaned files
 fileSchema.statics.findOrphanedFiles = function (olderThanDays = 30) {
   const cutoffDate = new Date();
