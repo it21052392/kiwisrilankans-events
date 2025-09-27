@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+// Helper function for flexible datetime validation
+const flexibleDateTime = message =>
+  z.string().refine(val => {
+    if (!val) return true; // Allow empty/undefined for optional field
+    // Accept both full ISO datetime and partial datetime formats
+    const fullDateTimeRegex =
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{3})?)?(Z|[+-]\d{2}:\d{2})?$/;
+    const partialDateTimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+    return fullDateTimeRegex.test(val) || partialDateTimeRegex.test(val);
+  }, message);
+
 export const commonSchemas = {
   mongoId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid MongoDB ObjectId'),
 
@@ -34,8 +45,12 @@ export const commonSchemas = {
   }),
 
   dateRange: z.object({
-    startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional(),
+    startDate: flexibleDateTime(
+      'Invalid start date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+    ).optional(),
+    endDate: flexibleDateTime(
+      'Invalid end date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+    ).optional(),
   }),
 
   fileUpload: z.object({
@@ -106,7 +121,9 @@ export const commonSchemas = {
     })
     .optional(),
 
-  dateString: z.string().datetime('Invalid date format').optional(),
+  dateString: flexibleDateTime(
+    'Invalid date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+  ).optional(),
 
   arrayString: z
     .string()

@@ -25,8 +25,12 @@ export const eventSchemas = {
         .max(2000, 'Description cannot exceed 2000 characters')
         .trim(),
       category: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid category ID'),
-      startDate: z.string().datetime('Invalid start date format'),
-      endDate: z.string().datetime('Invalid end date format'),
+      startDate: flexibleDateTime(
+        'Invalid start date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ),
+      endDate: flexibleDateTime(
+        'Invalid end date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ),
       location: z.object({
         name: z
           .string()
@@ -156,8 +160,12 @@ export const eventSchemas = {
         .string()
         .regex(/^[0-9a-fA-F]{24}$/, 'Invalid category ID')
         .optional(),
-      startDate: z.string().datetime('Invalid start date format').optional(),
-      endDate: z.string().datetime('Invalid end date format').optional(),
+      startDate: flexibleDateTime(
+        'Invalid start date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ).optional(),
+      endDate: flexibleDateTime(
+        'Invalid end date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ).optional(),
       location: z
         .object({
           name: z
@@ -295,8 +303,12 @@ export const eventSchemas = {
       status: z
         .enum(['draft', 'published', 'cancelled', 'completed'])
         .optional(),
-      startDate: z.string().datetime().optional(),
-      endDate: z.string().datetime().optional(),
+      startDate: flexibleDateTime(
+        'Invalid start date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ).optional(),
+      endDate: flexibleDateTime(
+        'Invalid end date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+      ).optional(),
       sortBy: z
         .enum([
           'startDate',
@@ -325,8 +337,12 @@ export const eventSchemas = {
       .regex(/^[0-9a-fA-F]{24}$/, 'Invalid category ID')
       .optional(),
     status: z.enum(['draft', 'published', 'cancelled', 'completed']).optional(),
-    startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional(),
+    startDate: flexibleDateTime(
+      'Invalid start date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+    ).optional(),
+    endDate: flexibleDateTime(
+      'Invalid end date format - must be YYYY-MM-DDTHH:MM or full ISO datetime'
+    ).optional(),
     sortBy: z
       .enum(['startDate', 'endDate', 'title', 'createdAt', 'price', 'capacity'])
       .default('startDate'),

@@ -90,6 +90,20 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
+      {/* Footer Links */}
+      <div className="mt-8 text-center">
+        <p className="text-sm text-muted-foreground mb-4">
+          By signing in, you agree to our{' '}
+          <a href="/terms" className="text-primary hover:underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </a>
+        </p>
+      </div>
+
     </AuthLayout>
   );
 }
