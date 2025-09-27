@@ -26,9 +26,8 @@ import {
   DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEvents } from '@/hooks/queries/useEvents';
+import { useEvents, useDeleteEventByOrganizer } from '@/hooks/queries/useEvents';
 import { useCategories } from '@/hooks/queries/useCategories';
-import { eventsService } from '@/services/events.service';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { formatEventTime, formatEventDateShort } from '@/lib/time-utils';
@@ -56,6 +55,9 @@ export default function OrganizerEventsPage() {
   // Fetch categories for filter
   const { data: categoriesData } = useCategories();
 
+  // Event deletion mutation
+  const deleteEventMutation = useDeleteEventByOrganizer();
+
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'organizer') {
       router.push('/auth/login');
@@ -69,7 +71,7 @@ export default function OrganizerEventsPage() {
   const handleDeleteEvent = async (eventId: string) => {
     setIsDeleting(eventId);
     try {
-      await eventsService.deleteEventByOrganizer(eventId);
+      await deleteEventMutation.mutateAsync(eventId);
       toast.success('Event deleted successfully');
       refetch();
     } catch (error) {
@@ -222,10 +224,10 @@ export default function OrganizerEventsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            disabled={isDeleting === event._id}
+                            disabled={isDeleting === event._id || deleteEventMutation.isPending}
                             className="text-red-600 hover:text-red-700"
                           >
-                            {isDeleting === event._id ? (
+                            {isDeleting === event._id || deleteEventMutation.isPending ? (
                               <LoadingSpinner size="sm" />
                             ) : (
                               <Trash2 className="h-4 w-4" />

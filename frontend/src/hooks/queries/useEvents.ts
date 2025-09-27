@@ -104,6 +104,29 @@ export const useDeleteEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+      
+      // CRITICAL: Invalidate pencil holds when event is deleted
+      queryClient.invalidateQueries({ queryKey: ['pencil-holds'] });
+    },
+  });
+};
+
+export const useDeleteEventByOrganizer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: eventsService.deleteEventByOrganizer,
+    onSuccess: (_, eventId) => {
+      // Remove from cache
+      queryClient.removeQueries({ queryKey: ['events', 'detail', eventId] });
+      
+      // Invalidate lists
+      queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
+      queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+      
+      // CRITICAL: Invalidate pencil holds when event is deleted
+      queryClient.invalidateQueries({ queryKey: ['pencil-holds'] });
     },
   });
 };
@@ -117,6 +140,9 @@ export const useSoftDeleteEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+      
+      // CRITICAL: Invalidate pencil holds when event is soft deleted
+      queryClient.invalidateQueries({ queryKey: ['pencil-holds'] });
     },
   });
 };
@@ -130,6 +156,9 @@ export const useRestoreEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'grid'] });
       queryClient.invalidateQueries({ queryKey: ['events', 'calendar'] });
+      
+      // Invalidate pencil holds when event is restored
+      queryClient.invalidateQueries({ queryKey: ['pencil-holds'] });
     },
   });
 };
