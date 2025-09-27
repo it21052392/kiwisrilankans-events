@@ -10,9 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
@@ -23,29 +20,15 @@ import {
   Mail, 
   Shield, 
   Calendar, 
-  Bell, 
-  Eye, 
   Save,
   Edit3,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(50, 'Name cannot exceed 50 characters'),
   avatar: z.string().url('Invalid avatar URL').optional().or(z.literal('')),
-  preferences: z.object({
-    notifications: z.object({
-      email: z.boolean(),
-      push: z.boolean(),
-      sms: z.boolean(),
-    }),
-    privacy: z.object({
-      profileVisibility: z.enum(['public', 'private', 'friends']),
-      showEmail: z.boolean(),
-    }),
-  }),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -64,24 +47,11 @@ export default function ProfilePage() {
     handleSubmit,
     formState: { errors, isDirty },
     reset,
-    watch,
-    setValue,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.name || '',
       avatar: user?.avatar || '',
-      preferences: {
-        notifications: {
-          email: user?.preferences?.notifications?.email ?? true,
-          push: user?.preferences?.notifications?.push ?? true,
-          sms: user?.preferences?.notifications?.sms ?? false,
-        },
-        privacy: {
-          profileVisibility: user?.preferences?.privacy?.profileVisibility ?? 'public',
-          showEmail: user?.preferences?.privacy?.showEmail ?? false,
-        },
-      },
     },
   });
 
@@ -137,274 +107,190 @@ export default function ProfilePage() {
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Profile Settings</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage your account settings and preferences
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-foreground mb-2">My Profile</h1>
+            <p className="text-muted-foreground text-lg">
+              View and manage your account information
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Overview */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 w-24 h-24 rounded-full bg-muted flex items-center justify-center">
-                    {user.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-24 h-24 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="w-12 h-12 text-muted-foreground" />
-                    )}
-                  </div>
-                  <CardTitle className="text-xl">{user.name}</CardTitle>
-                  <CardDescription className="flex items-center justify-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    {user.email}
-                  </CardDescription>
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    <Shield className="w-4 h-4" />
-                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Profile Overview - Enhanced */}
+            <div className="space-y-6">
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 p-6">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4">
+                      <div className="w-32 h-32 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-lg">
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-32 h-32 rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-16 h-16 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground mb-1">{user.name}</h2>
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                      <Mail className="w-4 h-4" />
+                      <span className="text-sm">{user.email}</span>
+                    </div>
+                    <Badge 
+                      variant={user.role === 'admin' ? 'default' : 'secondary'}
+                      className="text-sm px-3 py-1"
+                    >
+                      <Shield className="w-4 h-4 mr-1" />
                       {user.role === 'admin' ? 'Administrator' : 'Organizer'}
                     </Badge>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>Joined {format(new Date(user.createdAt), 'MMM yyyy')}</span>
+                </div>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Member Since</p>
+                        <p className="text-muted-foreground">
+                          {format(new Date(user.createdAt), 'MMMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <User className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Account Status</p>
+                        <p className="text-green-600 dark:text-green-400">Active</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Profile Form */}
-            <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic Information */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          <User className="w-5 h-5" />
-                          Basic Information
-                        </CardTitle>
-                        <CardDescription>
-                          Update your personal details
-                        </CardDescription>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditing(!isEditing)}
-                      >
-                        {isEditing ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Done
-                          </>
-                        ) : (
-                          <>
-                            <Edit3 className="w-4 h-4 mr-2" />
-                            Edit
-                          </>
-                        )}
-                      </Button>
+            {/* Profile Information - Read-only Display */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <User className="w-6 h-6" />
+                        Profile Information
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        Your personal account details
+                      </CardDescription>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="shrink-0"
+                    >
+                      {isEditing ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Done
+                        </>
+                      ) : (
+                        <>
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Edit
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
                         <Input
                           id="name"
                           {...register('name')}
                           disabled={!isEditing}
-                          className={errors.name ? 'border-red-500' : ''}
+                          className={`text-base ${errors.name ? 'border-red-500' : ''} ${!isEditing ? 'bg-muted/50' : ''}`}
                         />
                         {errors.name && (
                           <p className="text-sm text-red-500">{errors.name.message}</p>
                         )}
                       </div>
+                      
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                         <Input
                           id="email"
                           value={user.email}
                           disabled
-                          className="bg-muted"
+                          className="bg-muted/50 text-base"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Email cannot be changed
+                          Email address cannot be changed
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="avatar" className="text-sm font-medium">Avatar URL</Label>
+                        <Input
+                          id="avatar"
+                          {...register('avatar')}
+                          disabled={!isEditing}
+                          placeholder="https://example.com/avatar.jpg"
+                          className={`text-base ${errors.avatar ? 'border-red-500' : ''} ${!isEditing ? 'bg-muted/50' : ''}`}
+                        />
+                        {errors.avatar && (
+                          <p className="text-sm text-red-500">{errors.avatar.message}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Enter a valid image URL for your profile picture
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="avatar">Avatar URL</Label>
-                      <Input
-                        id="avatar"
-                        {...register('avatar')}
-                        disabled={!isEditing}
-                        placeholder="https://example.com/avatar.jpg"
-                        className={errors.avatar ? 'border-red-500' : ''}
-                      />
-                      {errors.avatar && (
-                        <p className="text-sm text-red-500">{errors.avatar.message}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Notification Preferences */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="w-5 h-5" />
-                      Notification Preferences
-                    </CardTitle>
-                    <CardDescription>
-                      Choose how you want to be notified
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Email Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive notifications via email
-                        </p>
+                    {/* Action Buttons */}
+                    {isEditing && (
+                      <div className="flex items-center gap-4 pt-4 border-t">
+                        <Button
+                          type="submit"
+                          disabled={updateProfileMutation.isPending || !isDirty}
+                          className="flex-1"
+                        >
+                          {updateProfileMutation.isPending ? (
+                            <>
+                              <LoadingSpinner className="w-4 h-4 mr-2" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancel}
+                          disabled={updateProfileMutation.isPending}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
                       </div>
-                      <Switch
-                        checked={watch('preferences.notifications.email')}
-                        onCheckedChange={(checked) =>
-                          setValue('preferences.notifications.email', checked, { shouldDirty: true })
-                        }
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Push Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive push notifications in your browser
-                        </p>
-                      </div>
-                      <Switch
-                        checked={watch('preferences.notifications.push')}
-                        onCheckedChange={(checked) =>
-                          setValue('preferences.notifications.push', checked, { shouldDirty: true })
-                        }
-                        disabled={!isEditing}
-                      />
-                    </div>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>SMS Notifications</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Receive notifications via SMS
-                        </p>
-                      </div>
-                      <Switch
-                        checked={watch('preferences.notifications.sms')}
-                        onCheckedChange={(checked) =>
-                          setValue('preferences.notifications.sms', checked, { shouldDirty: true })
-                        }
-                        disabled={!isEditing}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Privacy Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5" />
-                      Privacy Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Control your privacy and visibility
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Profile Visibility</Label>
-                      <Select
-                        value={watch('preferences.privacy.profileVisibility')}
-                        onValueChange={(value: 'public' | 'private' | 'friends') =>
-                          setValue('preferences.privacy.profileVisibility', value, { shouldDirty: true })
-                        }
-                        disabled={!isEditing}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Public</SelectItem>
-                          <SelectItem value="friends">Friends Only</SelectItem>
-                          <SelectItem value="private">Private</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Show Email</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Allow others to see your email address
-                        </p>
-                      </div>
-                      <Switch
-                        checked={watch('preferences.privacy.showEmail')}
-                        onCheckedChange={(checked) =>
-                          setValue('preferences.privacy.showEmail', checked, { shouldDirty: true })
-                        }
-                        disabled={!isEditing}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Action Buttons */}
-                {isEditing && (
-                  <div className="flex items-center gap-4 pt-4">
-                    <Button
-                      type="submit"
-                      disabled={updateProfileMutation.isPending || !isDirty}
-                    >
-                      {updateProfileMutation.isPending ? (
-                        <>
-                          <LoadingSpinner className="w-4 h-4 mr-2" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCancel}
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </form>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -412,3 +298,4 @@ export default function ProfilePage() {
     </PublicLayout>
   );
 }
+
